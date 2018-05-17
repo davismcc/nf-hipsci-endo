@@ -1,0 +1,620 @@
+"""
+Snakefile for single-cell endoderm differentiation project for processing 10x samples
+
+Author: Davis McCarthy
+Affiliation: EMBL-EBI
+Study: Single-cell endoderm differentiation project
+Date: Sunday 12 June 2016
+Run: snakemake -s Snakefile_10x --jobs 1000 --latency-wait 30 --cluster-config cluster.json --cluster 'bsub -q {cluster.queue} -J {cluster.name} -n {cluster.n} -R "rusage[mem={cluster.memory}]" -M {cluster.memory} -o {cluster.output} -e {cluster.error}'
+
+add --prioritize flage to prioritize particular files
+Latest modification:
+  - todo
+
+
+STUDY ID: 3963
+STUDY and PROJECT TITLE: Single Cell RNAseq at various stages of HiPSCs differentiating toward definitive endoderm and endoderm derived lineages.
+Study name abbreviation: SC-RNAseq-definitive endoderm
+PROJECT ID: 2010
+HMDMC number (ethical approval): 13/042, 15_074
+Project Cost Code: S0901
+n
+STUDY ID: 4262
+STUDY and PROJECT TITLE: Single cell RNA-seq and bisulfite-seq at various stares of HiPSCs differentiating toward definitive endoderm derived lineages
+PROJECT ID: 2218
+HMDMC number (ethical approval): 13/042, 15_074
+Project Cost Code: S0901
+
+FACS data uploaded from Vallier group to Ian Streeter. Organised FACS data in:
+/nfs/research2/hipsci/drop/hip-drop/tracked/endodiff/
+and copied to
+data_raw/facs
+
+Raw data from Sanger first downloaded to:
+data_raw/scrnaseq/run_{run}/cram
+
+Raw data from Sanger sequencing core with some additions then uploaded to:
+/hps/nobackup/hipsci/drop/hip-drop/incoming/stegle
+
+From there it is moved into the HipSci tracked data area by Ian Streeter:
+/hps/nobackup/hipsci/drop/hip-drop/tracked/
+
+Transient files and analyses, and working files to share can be put in the scratch directory:
+/hps/nobackup/hipsci/drop/hip-drop/scratch/
+
+Requires the Biobambam package installable through conda
+"""
+
+import glob
+import os
+from subprocess import run
+import pandas as pd
+import re
+
+configfile: "config.yaml"
+shell.prefix("set -euo pipefail;") 
+
+## REFERENCE FILES
+fasta = os.path.join(config['references_dir'], config['human_tx_fasta'])
+fasta_unzipped = config['human_gx_fasta']
+fasta_dict = fasta_unzipped.replace('fa', 'dict')
+fasta_idx = fasta_unzipped + '.fai'
+kallisto_idx = expand('{basedir}{index}', basedir=config['references_dir'], index=config['kallisto_idx'])
+fasta_GRCh38 = '/hps/nobackup/stegle/datasets/references/human/GRCh38/Homo_sapiens.GRCh38.rel85.cdna.all.ERCC92.fa.gz'
+fasta_unzipped_GRCh38 = '/hps/nobackup/stegle/datasets/references/human/GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.ERCC92.fa'
+fasta_dict_GRCh38 = '/hps/nobackup/stegle/datasets/references/human/GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.ERCC92.dict'
+fasta_idx_GRCh38 = fasta_unzipped_GRCh38 + '.fai'
+STAR_GENOME_DIR = '/hps/nobackup/stegle/datasets/references/human/STAR_GRCh37.75_ERCC'
+star_genome_files = ['chrLength.txt', 'chrNameLength.txt', 'chrName.txt', 'chrStart.txt', 'exonInfo.tab', 'Genome', 'genomeParameters.txt', 'SA', 'SAindex', 'sjdbInfo.txt', 'sjdbList.fromGTF.out.tab', 'sjdbList.out.tab', 'transcriptInfo.tab']
+## variant files
+dbSnpVcf = '/hps/nobackup/stegle/datasets/references/human/dbsnp_138.hg19.vcf.gz'
+#dbSnpVcf = '/hps/nobackup/stegle/users/mjbonder/ref/GenotypingInformation/dbsnp_138.hg19.vcf.gz'
+dbSnpVcfSmall = '/hps/nobackup/stegle/users/mjbonder/ref/GenotypingInformation/dbsnp_138.hg19.biallelicSNPs.HumanCoreExome12.Top1000ExpressedIpsGenes.Maf0.01.HWE0.0001.HipSci.vcf.gz'
+reAlignmentIntervals = '/hps/nobackup/stegle/users/mjbonder/ref/GenotypingInformation/knownIndels.intervals'
+knownIndelsMills = '/hps/nobackup/stegle/users/mjbonder/ref/GenotypingInformation/1000G_phase1.indels.hg19.sites.vcf.gz'
+knownIndels100G = '/hps/nobackup/stegle/users/mjbonder/ref/GenotypingInformation/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz'
+rRNAIntervals = '/hps/nobackup/stegle/datasets/references/human/rRNA.intervals'
+## HipSci
+HIPSCI_VCF = '/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/INFO_0.4/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.INFO_0.4_filtered.20170327.genotypes.allchr.vcf.gz'
+hipsci_chr_vcf = []
+hipsci_chr_vcf_idx = []
+for i in range(1, 23):
+    hipsci_chr_vcf.append('/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/INFO_0.4/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.INFO_0.4_filtered.20170327.genotypes.chr%s.vcf.gz' %str(i))
+    hipsci_chr_vcf_idx.append('/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/INFO_0.4/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.INFO_0.4_filtered.20170327.genotypes.chr%s.vcf.gz.tbi' %str(i))
+
+
+## define commands
+python_cmd = '/nfs/software/stegle/users/davis/conda-envs/py3/bin/python'
+star_cmd = '/nfs/software/stegle/bin/STAR'
+#gatk_cmd = 'java -jar /nfs/software/stegle/users/davis/GenomeAnalysisTK.jar'
+gatk_cmd = '/nfs/software/stegle/users/dseaton/java/jdk1.8.0_112/bin/java -Xmx48g -Xms24g -Djava.io.tmpdir=/hps/nobackup/hipsci/scratch/singlecell_endodiff/tmp -jar /hps/nobackup/stegle/users/mjbonder/tools/GATK/GenomeAnalysisTK.jar'
+picard_cmd='/nfs/software/stegle/users/dseaton/java/jdk1.8.0_112/bin/java -Xmx48g -Xms24g -Djava.io.tmpdir=/hps/nobackup/hipsci/scratch/singlecell_endodiff/tmp -jar /nfs/software/stegle/users/dseaton/picard/picard.jar'
+#Rscript_cmd='/nfs/software/stegle/users/davis/conda-envs/py3/bin/Rscript'
+Rscript_cmd = 'singularity exec /hps/nobackup/hipsci/scratch/biocplus.img Rscript'
+R_cmd='/nfs/software/stegle/users/davis/conda-envs/py3/bin/R'
+
+## parameter objects and samples
+RUNS_10x = ['cellranger201_count_22950_3_1000Genomes_hs37d5-ensembl_75_transcriptome', 'cellranger201_count_22950_5_1000Genomes_hs37d5-ensembl_75_transcriptome', 'cellranger201_count_22950_6_1000Genomes_hs37d5-ensembl_75_transcriptome', 'cellranger201_count_22950_7_1000Genomes_hs37d5-ensembl_75_transcriptome', 'cellranger201_count_22950_8_1000Genomes_hs37d5-ensembl_75_transcriptome', 'cellranger201_count_22951_3_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger202_count_24192_4636STDY7151182_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger202_count_24346_4636STDY7151183_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger202_count_24346_4636STDY7151184_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger202_count_24346_4636STDY7151185_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger202_count_4636STDY7138130_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger202_count_4636STDY7138131_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger202_count_4636STDY7138132_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger202_count_4636STDY7138133_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger210_count_24192_4636STDY7151182_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger210_count_24346_4636STDY7151183_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger210_count_24346_4636STDY7151184_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger210_count_24346_4636STDY7151185_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger210_count_24550_4636STDY7181833_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger210_count_24550_4636STDY7181834_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger210_count_24617_4636STDY7181831_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+         'cellranger210_count_24617_4636STDY7181832_1000Genomes_hs37d5-ensembl_75_transcriptome']
+
+RUNS_10x_Day0 = ['test2', 'cellranger201_count_22950_3_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+              'cellranger201_count_22951_3_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+              'cellranger210_count_4636STDY7138130_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+              'cellranger210_count_24192_4636STDY7151182_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+                 'cellranger210_count_24617_4636STDY7181831_1000Genomes_hs37d5-ensembl_75_transcriptome', \
+                 'cellranger210_count_24727_SC-RNAseq-definitive_endoderm7220110_1000Genomes_hs37d5-ensembl_75_transcriptome']
+
+# RUNS_10x = RUNS_10x_Day0
+
+## avoid 'cellranger201_count_22950_4_1000Genomes_hs37d5-ensembl_75_transcriptome', for now, as v large number of dubious barcodes
+
+## targets
+star_genome_output = expand('{genome_dir}/{genome_files}', genome_dir=STAR_GENOME_DIR, genome_files=star_genome_files)
+filtered_vcf_10x = []
+donor_id_10x = []
+donor_id_10x_cardelino = []
+barcodes_10x = {}
+barcode_bams_10x = {}
+variant_donor_id_files_10x_dict = {}
+variant_donor_id_files_10x_cardelino_dict = {}
+for run in RUNS_10x:
+    # filtered_vcf_10x.append(expand('data_raw/10x/{run}/vcf/pooled10x.filtered.vcf.gz', run=run))
+    # filtered_vcf_10x.append(expand('data_raw/10x/{run}/vcf/pooled10x.filtered.vcf.gz.csi', run=run))
+    donor_id_10x.append(expand('data_processed/donor_id_10x/donor_id_all.{run}.csv', run=run))
+    donor_id_10x_cardelino.append(expand('data_processed/donor_id_10x_cardelino/donor_id_all.{run}.csv', run=run))
+    fname = expand('data_raw/10x/{run}/filtered_gene_bc_matrices/1000Genomes_hs37d5/barcodes.tsv', run=run)
+    with open(fname[0]) as f:
+        content = f.readlines()
+    content = [x.strip() for x in content]
+    barcodes_10x[run] = content
+    barcode_bams_10x[run] = expand('data_raw/10x/{run}/bam_barcoded/{barcode}.bam', run=run, barcode=content)
+    variant_donor_id_files_10x_dict[run] = expand('data_raw/10x/{run}/donor_id/10x.{sample}.donor_id.csv', run=run, sample=content)
+    variant_donor_id_files_10x_cardelino_dict[run] = expand('data_raw/10x/{run}/donor_id_cardelino/10x.{sample}.donor_id.csv', run=run, sample=content)
+    filtered_vcf_10x.append(expand('data_raw/10x/{run}/vcf/10x.{barcode}.filtered.vcf.gz', run=run, barcode=content))
+    filtered_vcf_10x.append(expand('data_raw/10x/{run}/vcf/10x.{barcode}.filtered.vcf.gz.csi', run=run, barcode=content))
+filtered_vcf_10x = [filename for elem in filtered_vcf_10x for filename in elem]
+donor_id_10x = [filename for elem in donor_id_10x for filename in elem]
+
+
+
+rule all:
+    input:
+        filtered_vcf_10x, donor_id_10x, donor_id_10x_cardelino
+
+
+### 10x rules ###
+
+rule identify_donor_collect_10x_cardelino:
+    input:
+        files=lambda wildcards: variant_donor_id_files_10x_cardelino_dict[wildcards.run]
+    output:
+        'data_processed/donor_id_10x_cardelino/donor_id_all.{run}.csv'
+    params:
+        dir='data_raw/10x/{run}/donor_id_cardelino/',
+    run:
+        import pandas as pd
+        import glob
+        import os
+        input_files = glob.glob(os.path.join(params.dir, '*.donor_id.csv'))
+        df_list = {}
+        for infile in input_files:
+            df_tmp = pd.read_csv(infile)
+            df_list[infile] = df_tmp
+            df_out = pd.concat(df_list)
+            df_out.to_csv(output[0], index=False)
+
+
+rule identify_donor_collect_10x:
+    input:
+        files=lambda wildcards: variant_donor_id_files_10x_dict[wildcards.run]
+    output:
+        'data_processed/donor_id_10x/donor_id_all.{run}.csv'
+    params:
+        dir='data_raw/10x/{run}/donor_id/',
+    run:
+        import pandas as pd
+        import glob
+        import os
+        input_files = glob.glob(os.path.join(params.dir, '*.donor_id.csv'))
+        df_list = {}
+        for infile in input_files:
+            df_tmp = pd.read_csv(infile)
+            df_list[infile] = df_tmp
+        df_out = pd.concat(df_list)
+        df_out.to_csv(output[0], index=False)
+ 
+
+rule identify_donor_runs_10x_cardelino:
+    input:
+        sc_vcf='data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf.gz',
+        hipsci_vcf='data_raw/10x/{run}/vcf/10x.{sample}.filtered.hipsci.overlap.vcf.gz',
+        hipsci_vcf_idx='data_raw/10x/{run}/vcf/10x.{sample}.filtered.hipsci.overlap.vcf.gz.csi'
+    output:
+        'data_raw/10x/{run}/donor_id_cardelino/10x.{sample}.donor_id.csv'
+    params:
+        prefix='data_raw/10x/{run}/donor_id_cardelino/10x.{sample}.donor_id',
+        lines='cicb_2;cuhk_2;hegp_3;lepk_1;ueah_1;veku_2'
+    shell:
+        '{Rscript_cmd} src/R/identify_donor_small_vcf_cardelino.R --input_file "{input.sc_vcf}" '
+        '--donor_lines "{params.lines}" '
+        '--donor_vcf {input.hipsci_vcf} '
+        '--output_prefix "{params.prefix}" '
+
+
+rule identify_donor_runs_10x:
+    input:
+        sc_vcf='data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf.gz',
+        hipsci_vcf='data_raw/10x/{run}/vcf/10x.{sample}.filtered.hipsci.overlap.vcf.gz',
+        hipsci_vcf_idx='data_raw/10x/{run}/vcf/10x.{sample}.filtered.hipsci.overlap.vcf.gz.csi'
+    output:
+        'data_raw/10x/{run}/donor_id/10x.{sample}.donor_id.csv'
+    params:
+        prefix='data_raw/10x/{run}/donor_id/10x.{sample}.donor_id',
+        lines='cicb_2;cuhk_2;hegp_3;lepk_1;ueah_1;veku_2'
+    shell:
+        '{Rscript_cmd} src/R/identify_donor_small_vcf.R --input_file "{input.sc_vcf}" '
+        '--donor_lines "{params.lines}" '
+        '--donor_vcf {input.hipsci_vcf} '
+        '--output_prefix "{params.prefix}" '
+
+
+rule filter_hipsci_overlap_variants_10x:
+    input:
+        sc_vcf='data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf.gz',
+        sc_vcf_idx='data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf.gz.csi',
+        variant_list='data_raw/10x/{run}/vcf/10x.{sample}.variant_list.txt',
+        hipsci_vcf=HIPSCI_VCF
+    output:
+        tmp=temp('data_raw/10x/{run}/vcf/10x.{sample}.tmp.vcf.gz'),
+        vcf=temp('data_raw/10x/{run}/vcf/10x.{sample}.filtered.hipsci.overlap.vcf.gz'),
+        csi=temp('data_raw/10x/{run}/vcf/10x.{sample}.filtered.hipsci.overlap.vcf.gz.csi')
+    shell:
+        """
+        bcftools view -o {output.tmp} -O z -l 9 -R {input.variant_list} {input.hipsci_vcf}
+        vcf-sort {output.tmp} | bgzip -c > {output.vcf}
+        bcftools index {output.vcf}
+        """
+
+
+rule singlecell_variant_list_10x:
+    input:
+        'data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf.gz'
+    output:
+        temp('data_raw/10x/{run}/vcf/10x.{sample}.variant_list.txt')
+    shell:
+        """
+        set +euo pipefail
+        echo -e "1\\t1\\tA\\tC" > {output}
+        bcftools view -O v {input} | grep -v ^# | awk \'{{sub(/chr/,""); print $1"\\t"$2"\\t"$4"\\t"$5}}\' >> {output}
+        set -euo pipefail
+        """
+
+
+rule index_bgzip_vcf_10x:
+    input:
+        'data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf.gz'
+    output:
+        'data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf.gz.csi'
+    shell:
+        'bcftools index {input}'
+
+
+rule bgzip_vcf_10x:
+    input:
+        'data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf'
+    output:
+        'data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf.gz'
+    shell:
+        'vcf-sort {input} | bgzip -c > {output}'
+
+
+rule filter_variants_gatk_10x:
+    input:
+        vcf='data_raw/10x/{run}/vcf/10x.{sample}.unfiltered.vcf',
+        fasta=fasta_unzipped,
+        fai=fasta_idx,
+        fa_dict=fasta_dict
+    output:
+        temp('data_raw/10x/{run}/vcf/10x.{sample}.filtered.vcf')
+    threads: 1
+    shell:
+        '{gatk_cmd} -T VariantFiltration -R {input.fasta} -V {input.vcf} '
+        '-window 35 -cluster 3 -filterName FS -filter "FS > 30.0" '
+        '-filterName QD -filter "QD < 2.0" -o {output} -nct {threads}'
+
+
+rule call_variants_gatk_10x_pooled:
+    input:
+        fasta=fasta_unzipped,
+        fai=fasta_idx,
+        fa_dict=fasta_dict,
+        dbSnp=dbSnpVcf,
+        dbSnpSmall=dbSnpVcfSmall,
+        bam='data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bqsr.bam'
+    output:
+        'data_raw/10x/{run}/vcf/pooled10x.unfiltered.vcf'
+    shell:
+        '{gatk_cmd} -T HaplotypeCaller -R {input.fasta} -I {input.bam} '
+        '-dontUseSoftClippedBases '
+        '-D {input.dbSnpVcf} -gt_mode GENOTYPE_GIVEN_ALLELES '
+        '-alleles {input.dbSnpSmall} -L {input.dbSnpSmall} -o {output}' 
+
+
+rule call_variants_gatk_10x_barcode:
+    input:
+        fasta=fasta_unzipped,
+        fai=fasta_idx,
+        fa_dict=fasta_dict,
+        dbSnp=dbSnpVcf,
+        dbSnpSmall= dbSnpVcfSmall,
+        bam='data_raw/10x/{run}/bam_barcoded/{barcode}.rgadded.bam',
+        bai='data_raw/10x/{run}/bam_barcoded/{barcode}.rgadded.bai',
+    output:
+        'data_raw/10x/{run}/vcf/10x.{barcode}.unfiltered.vcf'
+    threads: 4
+    shell:
+        '{gatk_cmd} -T HaplotypeCaller -R {input.fasta} -I {input.bam} '
+        '-dontUseSoftClippedBases -nct 4 '
+        '-D {input.dbSnp} -gt_mode GENOTYPE_GIVEN_ALLELES '
+        '-alleles {input.dbSnpSmall} -L {input.dbSnpSmall} -o {output}' 
+
+
+rule index_barcode_bams_10x:
+    input:
+        'data_raw/10x/{run}/bam_barcoded/{barcode}.rgadded.bam'
+    output:
+        'data_raw/10x/{run}/bam_barcoded/{barcode}.rgadded.bai'
+    shell:
+        '{picard_cmd} BuildBamIndex I={input} '
+
+
+rule picard_read_groups_barcode_10x:
+    input:
+        bam='data_raw/10x/{run}/bam_barcoded/{barcode}.raw.bam'
+    output:
+        'data_raw/10x/{run}/bam_barcoded/{barcode}.rgadded.bam'
+    shell:
+        '{picard_cmd} AddOrReplaceReadGroups I={input.bam} O={output} SO=coordinate '
+        'RGID={wildcards.barcode} RGLB={wildcards.barcode} '
+        'RGPL=ILLUMINA RGPU=MACHINE1 RGSM={wildcards.barcode}'
+
+
+# split bam into separate files by barcode
+# samtools view  in.bam | cut -f 12 | tr "\t" "\n"  | grep  "^CB:Z:"  | cut -d ':' -f 3 | sort | uniq | while read S; do samtools view -h in.bam |  awk -v tag="CR:Z:$S" '($0 ~ /^@/ || index($0,tag)>0)' > ${S}.sam ; done
+
+# rule demultiplex_bam_10x:
+#      input:
+#          bam='data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bqsr.bam',
+#          barcodes='data_raw/10x/{run}/filtered_gene_bc_matrices/1000Genomes_hs37d5/barcodes.tsv'
+#      output:
+#          bam=lambda wildcards: barcode_bams_10x[wildcards.run]
+#      params:
+#          outdir='data_raw/10x/{run}/bam_barcoded/'
+#      shell:
+#          """
+#          samtools view -@ 4 -h {input.bam} | \
+#          perl -nle 'use strict; use autodie; our %h; \
+#          BEGIN{open(my$fh,q(<),shift@ARGV); my$od=shift@ARGV; $od//=q(); while(<$fh>){chomp; \
+#          open(my$f2,"| samtools view -u - |bamstreamingmarkduplicates level=0 tag=UB | samtools view -b - > $od/$_.bam");$h{$_}=$f2; }close $fh}  \
+#          if(/^@/){foreach my$fh (values %h){print {$fh} $_ }}elsif(m{\tCB:Z:(\S+)\b}){ my$fh=$h{$1}||next; print {$fh} $_;} \
+#          END{close $_ foreach values %h; warn "closed BAMs\n"}' {input.barcodes} {params.outdir}
+#          """
+
+rule split_bam_by_barcode_10x:
+    input:
+        bam='data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bqsr.bam'
+    output:
+        #sam=temp('data_raw/10x/{run}/bam_barcoded/{barcode}.raw.sam'),
+        bam='data_raw/10x/{run}/bam_barcoded/{barcode}.raw.bam'
+    shell:
+        """
+        samtools view -h {input.bam} | awk -v tag="CB:Z:{wildcards.barcode}" '($0 ~ /^@/ || index($0,tag)>0)' | \
+        samtools view -Sb - > {output.bam}
+        """
+
+
+rule picard_qc_metrics_10x:
+    input:
+        bam='data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bqsr.bam',
+        ref_flat='/hps/nobackup/stegle/datasets/references/human/GRCh37/Homo_sapiens.GRCh37.75_ERCC.ref_flat.txt',
+        ribo_intervals=rRNAIntervals
+    output:
+        metrics='data_raw/10x/{run}/picard.rna.metrics',
+        #plot_pdf='figures/picard_cov_vs_pos/{run}/{sample}.picard.cov.pos.pdf'
+    shell:
+        '{picard_cmd} CollectRnaSeqMetrics I={input.bam} O={output.metrics} '
+        'REF_FLAT={input.ref_flat} STRAND_SPECIFICITY=NONE '
+        'RIBOSOMAL_INTERVALS={input.ribo_intervals} '
+        #'CHART_OUTPUT={output.plot_pdf}'
+
+
+rule recalibrated_writer_gatk_10x:
+    input:
+        fasta=fasta_unzipped,
+        bam='data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bam',
+        bqsr='data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bqsr'
+    output:
+        'data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bqsr.bam'
+    threads: 8
+    shell:
+        '{gatk_cmd} -T PrintReads -R {input.fasta} -I {input.bam} '
+        '-BQSR {input.bqsr} -nct {threads} '
+        '-o {output}'
+
+
+rule base_recalibrator_gatk_10x:
+    input:
+        fasta=fasta_unzipped,
+        dbSnp=dbSnpVcf,
+        bam='data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bam',
+        known1=knownIndelsMills,
+        known2=knownIndels100G
+    output:
+        temp('data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bqsr')
+    threads: 8
+    shell:
+        '{gatk_cmd} -T BaseRecalibrator -R {input.fasta} -I {input.bam} '
+        '-knownSites {input.known1} -knownSites {input.known2} -knownSites {input.dbSnp} '
+        '-nct {threads} '
+        '-o {output}'
+
+
+rule indel_realignment_gatk_10x:
+    input:
+        fasta=fasta_unzipped,
+        bam='data_raw/10x/{run}/star_possorted_genome_bam.split.bam',
+        targetIntervals=reAlignmentIntervals,
+        known1=knownIndelsMills,
+        known2=knownIndels100G
+    output:
+        temp('data_raw/10x/{run}/star_possorted_genome_bam.split.realigned.bam')
+    shell:
+        '{gatk_cmd} -T IndelRealigner -R {input.fasta} -I {input.bam} '
+        '-targetIntervals {input.targetIntervals} -known {input.known1} -known {input.known2} '
+        '-U ALLOW_N_CIGAR_READS --consensusDeterminationModel KNOWNS_ONLY --LODThresholdForCleaning 0.4  '
+        '-o {output}'
+
+
+rule split_n_trim_gatk_10x:
+    input:
+        fasta=fasta_unzipped,
+        fai=fasta_idx,
+        fa_dict=fasta_dict,
+        bam='data_raw/10x/{run}/star_possorted_genome_bam.dedup.bam',
+        bai='data_raw/10x/{run}/star_possorted_genome_bam.dedup.bai'
+    output:
+        temp('data_raw/10x/{run}/star_possorted_genome_bam.split.bam')
+    shell:
+        '{gatk_cmd} -T SplitNCigarReads -R {input.fasta} -I {input.bam} -o {output} '
+        '-rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 '
+        '-U ALLOW_N_CIGAR_READS'
+
+
+rule picard_mark_dups_10x:
+    input:
+        bam='data_raw/10x/{run}/possorted_genome_bam.chrprefix.bam',
+        bai='data_raw/10x/{run}/possorted_genome_bam.chrprefix.bam.bai'
+    output:
+        bam=temp('data_raw/10x/{run}/star_possorted_genome_bam.dedup.bam'),
+        bai=temp('data_raw/10x/{run}/star_possorted_genome_bam.dedup.bai'),
+        metrics='data_raw/10x/{run}/picard.dedup.output.metrics'
+    shell:
+        '{picard_cmd} MarkDuplicates I={input.bam} O={output.bam} CREATE_INDEX=true '
+        'VALIDATION_STRINGENCY=SILENT M={output.metrics} '
+
+
+rule bam_add_chr_prefix_10x:
+    input:
+        bam='data_raw/10x/{run}/possorted_genome_bam.bam',
+        bai='data_raw/10x/{run}/possorted_genome_bam.bam.bai'
+    output:
+        bam=temp('data_raw/10x/{run}/possorted_genome_bam.chrprefix.bam'),
+        bai=temp('data_raw/10x/{run}/possorted_genome_bam.chrprefix.bam.bai'),
+    shell:
+        """
+        samtools view -h {input.bam} | \
+        awk 'BEGIN{{FS=OFS="\t"}} (/^@/ && !/@SQ/){{print $0}} $2~/^SN:[1-9]|^SN:X|^SN:Y|^SN:MT/{{print $0}} $3~/^[1-9]|X|Y|MT/{{$3="chr"$3; print $0}} ' | \
+        sed 's/SN:/SN:chr/g' | sed 's/chrMT/chrM/g' | grep -v 'chrSM' | \
+        samtools view -bS - > {output.bam}
+        samtools index {output.bam}
+        """
+        # samtools view -H {output.bam} | grep -v "chrSM" | samtools reheader -i - {output.bam}
+
+# rule picard_sort_coord_10x:
+#     input:
+#         bam='data_raw/10x/{run}/star/star.2pass.Aligned.sortedByCoord.tagsadded.bam'
+#     output:
+#         bam='data_raw/10x/{run}/star_possorted_genome_bam.tagsadded_possort.bam',
+#         bai='data_raw/10x/{run}/star_possorted_genome_bam.tagsadded_possort.bai'
+#     shell:
+#         """
+#         {picard_cmd} SortSam I={input.bam} O={output.bam} SO=coordinate CREATE_INDEX=true
+#         """
+
+
+# rule picard_merge_bam_alignment_10x:
+#     input:
+#         aligned_bam='data_raw/10x/{run}/star_possorted_genome_bam.qnamesort.bam',
+#         unmapped_bam='data_raw/10x/{run}/unmapped_bam.bam',
+#         fasta=fasta_unzipped
+#     output:
+#         temp('data_raw/10x/{run}/star/star.2pass.Aligned.sortedByCoord.tagsadded.bam')
+#     shell:
+#         '{picard_cmd} MergeBamAlignment REFERENCE_SEQUENCE={input.fasta} '
+#         'UNMAPPED_BAM={input.unmapped_bam} ALIGNED_BAM={input.aligned_bam} '
+#         'OUTPUT={output} INCLUDE_SECONDARY_ALIGNMENTS=false PAIRED_RUN=false '
+#         'VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true '
+
+
+# rule picard_sort_qname_10x:
+#     input:
+#         bam1='data_raw/10x/{run}/star/star.2pass.Aligned.sortedByCoord.out.bam',
+#     output:
+#         bam1=temp('data_raw/10x/{run}/star_possorted_genome_bam.qnamesort.bam'),
+#     shell:
+#         """
+#         {picard_cmd} SortSam I={input.bam1} O={output.bam1} SO=queryname
+#         """
+
+
+# rule index_star_bams_10x:
+#     input:
+#         'data_raw/10x/{run}/star/star.2pass.Aligned.sortedByCoord.out.bam'
+#     output:
+#         temp('data_raw/10x/{run}/star/star.2pass.Aligned.sortedByCoord.out.bam.bai')
+#     shell:
+#         'samtools index {input} '
+
+
+# rule make_unmapped_bam_10x:
+#     input:
+#         'data_raw/10x/{run}/possorted_genome_bam.bam'
+#     output:
+#         temp('data_raw/10x/{run}/unmapped_bam.bam')
+#     shell:
+#         """
+#         {picard_cmd} RevertSam \
+#         I={input} \
+#         O={output} \
+#         SANITIZE=false \
+#         MAX_DISCARD_FRACTION=0.005 \
+#         ATTRIBUTE_TO_CLEAR=XT \
+#         ATTRIBUTE_TO_CLEAR=XN \
+#         ATTRIBUTE_TO_CLEAR=AS \
+#         ATTRIBUTE_TO_CLEAR=OC \
+#         ATTRIBUTE_TO_CLEAR=OP \
+#         SORT_ORDER=queryname \
+#         RESTORE_ORIGINAL_QUALITIES=true \
+#         REMOVE_DUPLICATE_INFORMATION=true \
+#         REMOVE_ALIGNMENT_INFORMATION=true
+#     """
+
+
+# rule align_with_star_2pass_10x:
+#     input:
+#         star_genome_output,
+#         genome_dir=STAR_GENOME_DIR,
+#         fq='data_raw/10x/{run}/fastq/merged.fq.gz'
+#     output:
+#         'data_raw/10x/{run}/star/star.2pass.Aligned.sortedByCoord.out.bam'
+#     params: 
+#         prefix='data_raw/10x/{run}/star/star.2pass.'
+#     threads: 16
+#     shell:
+#         '{star_cmd} --genomeDir {input.genome_dir} '
+#         '--readFilesIn {input.fq} '
+#         '--outFileNamePrefix {params.prefix} '
+#         '--outSAMtype BAM SortedByCoordinate ' 
+#         '--alignSJoverhangMin 8 ' 
+#         '--alignSJDBoverhangMin 1 --genomeLoad NoSharedMemory '
+#         '--alignIntronMin 20 --alignIntronMax 1000000 '
+#         '--alignMatesGapMax 1000000 --sjdbScore 2 '
+#         '--outFilterType BySJout '
+#         '--outFilterMultimapNmax 20 --outFilterMismatchNmax 999 '
+#         '--outFilterMismatchNoverLmax 0.04 '
+#         '--outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 '
+#         '--outSAMstrandField intronMotif '
+#         '--outFilterIntronMotifs RemoveNoncanonical '
+#         '--outSAMattributes NH HI NM MD AS XS --outSAMunmapped Within '
+#         '--runThreadN {threads} --twopassMode Basic '
+#         '--readFilesCommand zcat ' 
+#         '--limitBAMsortRAM  75000000000 '
+
+# @PG     ID:STAR PN:STAR VN:STAR_2.5.1b  CL:STAR   --runThreadN 4   
+# --genomeDir /nfs/gs02/repository/transcriptomes/Homo_sapiens/ensembl_75_transcriptome/1000Genomes_hs37d5/10X/star   
+# --readFilesIn /nfs/gs02/IL_seq_data/cellranger/analysis/cellranger201_count_22950_8_1000Genomes_hs37d5-ensembl_75_transcriptome/SC_RNA_COUNTER_CS/SC_RNA_COUNTER/EXTRACT_READS/fork0/chnk0/files/reads.fastq/1.fastq      
+# --readNameSeparator space      --outStd SAM   --outSAMtype SAM      --outSAMunmapped Within      --outSAMorder PairedKeepInputOrder   
+# --outSAMattrRGline ID:cellranger201_count_22950_8_1000Genomes_hs37d5-ensembl_75_transcriptome:MissingLibrary:1:HJ7JWBBXX:8   
+# SM:cellranger201_count_22950_8_1000Genomes_hs37d5-ensembl_75_transcriptome   LB:MissingLibrary.1   PU:cellranger201_count_22950_8_1000Genomes_hs37d5-ensembl_75_transcriptome:MissingLibrary:1:HJ7JWBBXX:8   PL:ILLUMINA      --outSAMmultNmax 18446744073709551615
+
+
+# rule bam2fastq_10x:
+#     input:
+#         bam='data_raw/10x/{run}/possorted_genome_bam.bam',
+#         bai='data_raw/10x/{run}/possorted_genome_bam.bam.bai'
+#     output:
+#         fq='data_raw/10x/{run}/fastq/merged.fq.gz'
+#     shell:
+#         """
+#         samtools view -u {input} | \
+#         samtools collate -uOn 128 - tmp/tmp-prefix-10x-{wildcards.run} | \
+#         samtools fastq -F 0xB00 -t -0 {output.fq} --barcode-tag CB -T CB -
+#         """
+
+
+#################

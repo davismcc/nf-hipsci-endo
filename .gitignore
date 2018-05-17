@@ -4,3 +4,14 @@ data/
 results/
 .DS_Store
 tests/test_data
+
+### Emacs ###
+# -*- mode: gitignore; -*-
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*

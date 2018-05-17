@@ -1,0 +1,152 @@
+"""
+Snakefile to merge and QC processed data for single-cell endoderm differentiation project
+
+Author: Davis McCarthy
+Affiliation: EMBL-EBI
+Study: Single-cell endoderm differentiation project
+Date: Sunday 12 June 2016
+Run: snakemake  -s Snakefile_merge_qc --jobs 100 --latency-wait 30 --cluster-config cluster.json --cluster 'bsub -q {cluster.queue} -J {cluster.name} -n {cluster.n} -R "rusage[mem={cluster.memory}]" -M {cluster.memory} -o {cluster.output} -e {cluster.error}'
+add --prioritize flage to prioritize particular files
+
+STUDY ID: 3963
+STUDY and PROJECT TITLE: Single Cell RNAseq at various stages of HiPSCs differentiating toward definitive endoderm and endoderm derived lineages.
+Study name abbreviation: SC-RNAseq-definitive endoderm
+PROJECT ID: 2010
+HMDMC number (ethical approval): 13/042, 15_074
+Project Cost Code: S0901
+n
+STUDY ID: 4262
+STUDY and PROJECT TITLE: Single cell RNA-seq and bisulfite-seq at various stares of HiPSCs differentiating toward definitive endoderm derived lineages
+PROJECT ID: 2218
+HMDMC number (ethical approval): 13/042, 15_074
+Project Cost Code: S0901
+
+FACS data uploaded from Vallier group to Ian Streeter. Organised FACS data in:
+/nfs/research2/hipsci/drop/hip-drop/tracked/endodiff/
+and copied to
+data_raw/facs
+
+Raw data from Sanger first downloaded to:
+data_raw/scrnaseq/run_{run}/cram
+
+Raw data from Sanger sequencing core with some additions then uploaded to:
+/hps/nobackup/hipsci/drop/hip-drop/incoming/stegle
+
+From there it is moved into the HipSci tracked data area by Ian Streeter:
+/hps/nobackup/hipsci/drop/hip-drop/tracked/
+
+Transient files and analyses, and working files to share can be put in the scratch directory:
+/hps/nobackup/hipsci/drop/hip-drop/scratch/
+"""
+
+
+import glob
+import os
+from subprocess import run
+import pandas as pd
+import re
+
+shell.prefix("set -euo pipefail;") 
+
+Rscript_cmd='/nfs/software/stegle/users/davis/conda-envs/py3/bin/Rscript'
+R_cmd='/nfs/software/stegle/users/davis/conda-envs/py3/bin/R'
+
+## parameter objects and samples
+## data from run_18190 and run_19776 are poor/problematic, so ignore
+RUNS = ['run_20287', 'run_20416', 'run_20450', 'run_20727', 'run_20759', 'run_20794', 'run_21241', 'run_21554', 'run_21672', 'run_21673', 'run_21843', 'run_21965', 'run_21999', 'run_22139', 'run_22194', 'run_22492', 'run_22606', 'run_22607', 'run_22710', 'run_22841', 'run_22944', 'run_23362', 'run_23794', 'run_24086']
+##RUNS = ['run_23794', 'run_24086']
+
+#
+SAMPLES_DICT = {}
+for run in RUNS:
+    tmp = glob.glob("data_raw/scrnaseq/{0}/cram/*.cram".format(run))
+    SAMPLES_DICT[run] = [os.path.basename(w).replace('.cram', '') for w in tmp]
+SAMPLES = glob.glob("data_raw/scrnaseq/*/cram/*.cram")
+SAMPLES = [os.path.basename(w).replace('.cram', '') for w in SAMPLES]
+
+## targets
+scesets = []
+scater_first_html_reports = []
+multiqc_reports = []
+seq_metadata_files_dict = {}
+seq_metadata_output = []
+for run in RUNS:
+    # scesets.append(expand('data_processed/scrnaseq/sceset.{run}.kallisto.preqc_tx.rds', run=run))
+    # scesets.append(expand('data_processed/scrnaseq/sceset.{run}.kallisto.preqc_gene.rds', run=run))
+    scesets.append(expand('data_processed/scrnaseq/sceset.{run}.salmon.preqc_tx.rds', run=run))
+    scesets.append(expand('data_processed/scrnaseq/sceset.{run}.salmon.preqc_gene.rds', run=run))
+    scater_first_html_reports.append(expand('reports/first_qc/{run}.{quant_tool}.first_qc.html', run=run, quant_tool = ['kallisto', 'salmon']))
+    seq_metadata_files_dict[run] = expand('data_raw/scrnaseq/{run}/meta/{sample}.meta', run=run, sample=SAMPLES_DICT[run])
+
+for i in range(len(RUNS)):
+    multiqc_reports.append("reports/multiqc/{0}/multiqc_report.{0}.html".format(RUNS[i]))
+    seq_metadata_output.append("metadata/scrnaseq/seq_metadata.{0}.tsv".format(RUNS[i]))
+
+
+## flatten these lists
+scater_first_html_reports = [filename for elem in scater_first_html_reports for filename in elem]
+seq_metadata_files_dict = [filename for elem in seq_metadata_files_dict for filename in elem]
+
+## input files for summarising data at experiment level
+expt_sceset_reqd_files = {'expt01': ['data_processed/donor_id/donor_id_all.run_20416.csv', 'metadata/scrnaseq/seq_metadata.run_20416.tsv', 'data_processed/scrnaseq/sceset.run_20416.salmon.preqc_gene.rds'], 'expt03': ['data_processed/donor_id/donor_id_all.run_20759.csv', 'metadata/scrnaseq/seq_metadata.run_20759.tsv', 'data_processed/scrnaseq/sceset.run_20759.salmon.preqc_gene.rds'], 'expt06': ['data_processed/donor_id/donor_id_all.run_20450.csv', 'metadata/scrnaseq/seq_metadata.run_20450.tsv', 'data_processed/scrnaseq/sceset.run_20450.salmon.preqc_gene.rds'], 'expt08': ['data_processed/donor_id/donor_id_all.run_20287.csv', 'metadata/scrnaseq/seq_metadata.run_20287.tsv', 'data_processed/scrnaseq/sceset.run_20287.salmon.preqc_gene.rds'], 'expt09': ['data_processed/donor_id/donor_id_all.run_21843.csv', 'metadata/scrnaseq/seq_metadata.run_21843.tsv', 'data_processed/scrnaseq/sceset.run_21843.salmon.preqc_gene.rds'], 'expt10': ['data_processed/donor_id/donor_id_all.run_21241.csv', 'metadata/scrnaseq/seq_metadata.run_21241.tsv', 'data_processed/scrnaseq/sceset.run_21241.salmon.preqc_gene.rds'], 'expt12': ['data_processed/donor_id/donor_id_all.run_21672.csv', 'metadata/scrnaseq/seq_metadata.run_21672.tsv', 'data_processed/scrnaseq/sceset.run_21672.salmon.preqc_gene.rds'], 'expt18': ['data_processed/donor_id/donor_id_all.run_21843.csv', 'metadata/scrnaseq/seq_metadata.run_21843.tsv', 'data_processed/scrnaseq/sceset.run_21843.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_21672.csv', 'metadata/scrnaseq/seq_metadata.run_21672.tsv', 'data_processed/scrnaseq/sceset.run_21672.salmon.preqc_gene.rds'], 'expt19': ['data_processed/donor_id/donor_id_all.run_21673.csv', 'metadata/scrnaseq/seq_metadata.run_21673.tsv', 'data_processed/scrnaseq/sceset.run_21673.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_21672.csv', 'metadata/scrnaseq/seq_metadata.run_21672.tsv', 'data_processed/scrnaseq/sceset.run_21672.salmon.preqc_gene.rds'], 'expt20': ['data_processed/donor_id/donor_id_all.run_21673.csv', 'metadata/scrnaseq/seq_metadata.run_21673.tsv', 'data_processed/scrnaseq/sceset.run_21673.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_21999.csv', 'metadata/scrnaseq/seq_metadata.run_21999.tsv', 'data_processed/scrnaseq/sceset.run_21999.salmon.preqc_gene.rds'], 'expt21': ['data_processed/donor_id/donor_id_all.run_21554.csv', 'metadata/scrnaseq/seq_metadata.run_21554.tsv', 'data_processed/scrnaseq/sceset.run_21554.salmon.preqc_gene.rds'], 'expt22': ['data_processed/donor_id/donor_id_all.run_21554.csv', 'metadata/scrnaseq/seq_metadata.run_21554.tsv', 'data_processed/scrnaseq/sceset.run_21554.salmon.preqc_gene.rds'], 'expt22': ['data_processed/donor_id/donor_id_all.run_21554.csv', 'metadata/scrnaseq/seq_metadata.run_21554.tsv', 'data_processed/scrnaseq/sceset.run_21554.salmon.preqc_gene.rds'], 'expt23': ['data_processed/donor_id/donor_id_all.run_22606.csv', 'metadata/scrnaseq/seq_metadata.run_22606.tsv', 'data_processed/scrnaseq/sceset.run_22606.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_22194.csv', 'metadata/scrnaseq/seq_metadata.run_22194.tsv', 'data_processed/scrnaseq/sceset.run_22194.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_22492.csv', 'metadata/scrnaseq/seq_metadata.run_22492.tsv', 'data_processed/scrnaseq/sceset.run_22492.salmon.preqc_gene.rds'], 'expt24': ['data_processed/donor_id/donor_id_all.run_22139.csv', 'metadata/scrnaseq/seq_metadata.run_22139.tsv', 'data_processed/scrnaseq/sceset.run_22139.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_21965.csv', 'metadata/scrnaseq/seq_metadata.run_21965.tsv', 'data_processed/scrnaseq/sceset.run_21965.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_22492.csv', 'metadata/scrnaseq/seq_metadata.run_22492.tsv', 'data_processed/scrnaseq/sceset.run_22492.salmon.preqc_gene.rds'], 'expt27': ['data_processed/donor_id/donor_id_all.run_22606.csv', 'metadata/scrnaseq/seq_metadata.run_22606.tsv', 'data_processed/scrnaseq/sceset.run_22606.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_22710.csv', 'metadata/scrnaseq/seq_metadata.run_22710.tsv', 'data_processed/scrnaseq/sceset.run_22710.salmon.preqc_gene.rds'], 'expt28': ['data_processed/donor_id/donor_id_all.run_22606.csv', 'metadata/scrnaseq/seq_metadata.run_22606.tsv', 'data_processed/scrnaseq/sceset.run_22606.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_22710.csv', 'metadata/scrnaseq/seq_metadata.run_22710.tsv', 'data_processed/scrnaseq/sceset.run_22710.salmon.preqc_gene.rds'], 'expt29': ['data_processed/donor_id/donor_id_all.run_22607.csv', 'metadata/scrnaseq/seq_metadata.run_22607.tsv', 'data_processed/scrnaseq/sceset.run_22607.salmon.preqc_gene.rds'], 'expt32': ['data_processed/donor_id/donor_id_all.run_23794.csv', 'metadata/scrnaseq/seq_metadata.run_23794.tsv', 'data_processed/scrnaseq/sceset.run_23794.salmon.preqc_gene.rds', 'data_processed/donor_id/donor_id_all.run_24086.csv', 'metadata/scrnaseq/seq_metadata.run_24086.tsv', 'data_processed/scrnaseq/sceset.run_24086.salmon.preqc_gene.rds'], 'expt33': ['data_processed/donor_id/donor_id_all.run_23794.csv', 'metadata/scrnaseq/seq_metadata.run_23794.tsv', 'data_processed/scrnaseq/sceset.run_23794.salmon.preqc_gene.rds'], 'expt34': ['data_raw/scrnaseq/run_24229/donor_id_all.csv', 'data_raw/scrnaseq/run_24229/seq_metadata.tsv', 'data_raw/scrnaseq/run_24229/sces/sce.salmon.GRCh37.preqc_gene.rds', 'data_raw/scrnaseq/run_24252/donor_id_all.csv', 'data_raw/scrnaseq/run_24252/seq_metadata.tsv', 'data_raw/scrnaseq/run_24252/sces/sce.salmon.GRCh37.preqc_gene.rds', 'data_processed/facs/experiment_34/expt34_day0_rep1_well_annotations.csv', 'data_processed/facs/experiment_34/expt34_day1_rep1_well_annotations.csv', 'data_processed/facs/experiment_34/expt34_day2_rep1_well_annotations.csv', 'data_processed/facs/experiment_34/expt34_day3_rep1_well_annotations.csv'], 'expt35': ['data_raw/scrnaseq/run_24229/donor_id_all.csv', 'data_raw/scrnaseq/run_24229/seq_metadata.tsv', 'data_raw/scrnaseq/run_24229/sces/sce.salmon.GRCh37.preqc_gene.rds', 'data_raw/scrnaseq/run_24252/donor_id_all.csv', 'data_raw/scrnaseq/run_24252/seq_metadata.tsv', 'data_raw/scrnaseq/run_24252/sces/sce.salmon.GRCh37.preqc_gene.rds', 'data_processed/facs/experiment_35/expt35_day0_rep1_well_annotations.csv', 'data_processed/facs/experiment_35/expt35_day1_rep1_well_annotations.csv', 'data_processed/facs/experiment_35/expt35_day2_rep1_well_annotations.csv', 'data_processed/facs/experiment_35/expt35_day3_rep1_well_annotations.csv']}
+## experiment sceset files
+expt_scesets = []
+for expt in ['expt01', 'expt03', 'expt06', 'expt09', 'expt10', 'expt12', 'expt18', 'expt19', 'expt20', 'expt21', 'expt22', 'expt23', 'expt24', 'expt27', 'expt28', 'expt29', 'expt32', 'expt33', 'expt34', 'expt35']:
+    expt_scesets.append('data_processed/{0}/sceset_{0}_salmon_allmeta_allcells.rds'.format(expt))
+
+
+rule all:
+    input:
+        #scater_first_html_reports, 
+        # multiqc_reports,
+        # expt_scesets,
+        'data_processed/merged/sce_merged_qc_filt.rds',
+        'reports/merged_data/qc_merged.html'
+
+
+rule merge_qc_sce:
+    input:
+        files=expt_scesets
+    output:
+        rds='data_processed/merged/sce_merged_qc_filt.rds',
+        html='reports/merged_data/qc_merged.html'
+    params:
+        rmd='reports/merged_data/qc_merged.Rmd'
+    shell:
+        """
+        {Rscript_cmd} -e 'rmarkdown::render("{params.rmd}", clean = TRUE, output_format = "html_document")'
+        """
+
+
+rule run_to_expt_sces:
+    input:
+        files=lambda wildcards: expt_sceset_reqd_files[wildcards.expt]
+    output:
+        rds='data_processed/{expt}/sceset_{expt}_salmon_allmeta_allcells.rds',
+        html='reports/{expt}/{expt}.salmon.qc.anna.html'
+    params:
+        rmd='reports/{expt}/{expt}.salmon.qc.anna.Rmd'
+    shell:
+        """
+        {Rscript_cmd} -e 'rmarkdown::render("{params.rmd}", clean = TRUE, output_format = "html_document")'
+        """
+
+rule multiqc_report:
+    input:
+        'data_processed/donor_id/donor_id_all.{run}.csv'
+    output:
+        "reports/multiqc/{run}/multiqc_report.{run}.html"
+    shell:
+        'multiqc --force --filename {output} ' 
+        'data_raw/scrnaseq/{run} reports/fastqc/scrnaseq/{run}'
+
+
+rule rough_qc:
+    input:
+        'data_processed/scrnaseq/sceset.{run}.{quant_tool}.preqc_gene.rds'
+    output:
+        'reports/first_qc/{run}.{quant_tool}.first_qc.html'
+    shell:
+        '{Rscript_cmd} src/R/compile_report.R -i {input} -o {output} '
+        '--template src/Rmd/rough_qc_template.Rmd '
+
