@@ -551,7 +551,7 @@ rule call_variants_mpileup_fthicov:
         """
         mkdir tmp/tmp-{wildcards.sample}
         bcftools mpileup -E -Ou --skip-indels -R {input.dbSnpSmall} -f {input.fasta} --annotate AD,DP,SP,INFO/AD {input.bam} | \
-        bcftools call --insert-missed -R {input.dbSnpSmall} -m -Ou | \
+        bcftools call --insert-missed -R {input.dbSnpSmall} -T {input.targets} -m -Ou | \
         bcftools filter -Ou -i'TYPE="snp" && DP>3 && QUAL>20' | \
         bcftools sort -T tmp/tmp-{wildcards.sample} --max-mem 8G -Oz -o {output.vcf}
         bcftools index {output.vcf}
