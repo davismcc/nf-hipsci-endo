@@ -187,7 +187,7 @@ main <- function(input_vcf, output_prefix, donor_lines, donor_vcf, fasta_idx) {
     assign_em <- cell_assign_EM(A = snpmat_list$A, D = snpmat_list$D,
                            C = snpmat_list$C,
                            Psi = rep(1 / ncol(snpmat_list$C), ncol(snpmat_list$C)),
-                           model = "Bernoulli")
+                           model = "Binomial")
     probs <- as.vector(assign_em$prob)
     names(probs) <- colnames(assign_em$prob)
     output_df <- full_output_df(input_vcf, vcf_sample, vcf_donor, snpmat_list$sm_sample,
