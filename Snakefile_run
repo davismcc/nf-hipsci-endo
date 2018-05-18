@@ -568,7 +568,7 @@ rule call_variants_yuanhua:
     threads: 1
     shell:
         """
-        echo "{wildcards.sample},{input.bam}\n" > {output.tmp}
+        echo "{wildcards.sample},{input.bam}" > {output.tmp}
         /nfs/software/stegle/users/davis/conda-envs/sc/bin/python \
         ../../../src/Python/mut_express.py -i {input.hipsci_vcf} \
         -o {output.vcf} -s {output.tmp} -m 5 -p {threads}
