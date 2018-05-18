@@ -563,7 +563,7 @@ rule call_variants_yuanhua:
         bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr.bam'
     output:
         vcf='vcf/{sample}/{sample}.filtered.vcf.gz',
-        idx='vcf/{sample}/{sample}.filtered.vcf.gz.csi'
+        idx='vcf/{sample}/{sample}.filtered.vcf.gz.csi',
         tmp=temp('tmp_{sample}_bam_list.csv')
     threads: 1
     shell:
