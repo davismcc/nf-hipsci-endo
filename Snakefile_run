@@ -569,8 +569,8 @@ rule call_variants_yuanhua:
     shell:
         """
         echo "{wildcards.sample},{intput.bam},\n" > {output.tmp}
-        python mut_express.py -i {input.hipsci_vcf} -o {output.vcf} \
-        -s {output.tmp} -m 5 -p {threads}
+        python ../../../src/Python/mut_express.py -i {input.hipsci_vcf} \
+        -o {output.vcf} -s {output.tmp} -m 5 -p {threads}
         """
 
 
