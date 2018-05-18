@@ -539,7 +539,7 @@ rule call_variants_mpileup_fthicov:
         fa_dict=fasta_dict,
         dbSnp=dbSnpVcf,
         dbSnpSmall= dbSnpVcfSmall,
-        targets='/hps/nobackup/hipsci/scratch/singlecell_endodiff/dbsnp_138.hg19.biallelicSNPs.HumanCoreExome12.Top1000ExpressedIpsGenes.Maf0.01.HWE0.0001.HipSci.als.tsv.gz'
+        targets='/hps/nobackup/hipsci/scratch/singlecell_endodiff/dbsnp_138.hg19.biallelicSNPs.HumanCoreExome12.Top1000ExpressedIpsGenes.Maf0.01.HWE0.0001.HipSci.als.tsv.gz',
         bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr.bam'
     output:
         vcf='vcf/{sample}/{sample}.filtered.vcf.gz',
