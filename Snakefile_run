@@ -545,13 +545,17 @@ rule call_variants_mpileup_fthicov:
         targets='/hps/nobackup/hipsci/scratch/singlecell_endodiff/dbsnp_138.hg19.biallelicSNPs.HumanCoreExome12.Top1000ExpressedIpsGenes.Maf0.01.HWE0.0001.HipSci.als.tsv.gz',
         bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr.bam'
     output:
+        mpi=temp('vcf/{sample}/{sample}.filtered.bcf.gz'),
+        midx=temp('vcf/{sample}/{sample}.filtered.bcf.gz.csi'),
         vcf='vcf/{sample}/{sample}.filtered.vcf.gz',
         idx='vcf/{sample}/{sample}.filtered.vcf.gz.csi'
     shell:
         """
         mkdir tmp/tmp-{wildcards.sample}
-        bcftools mpileup -E -Ou --skip-indels -R {input.dbSnpSmall} -f {input.fasta} --annotate AD,DP,SP,INFO/AD {input.bam} | \
-        bcftools call -R {input.dbSnpSmall} -T {input.targets} -m -Ou | \
+        bcftools mpileup -E -Ob --skip-indels -R {input.dbSnpSmall} \
+        -f {input.fasta} --annotate AD,DP,SP,INFO/AD {input.bam} -o {output.mpi}
+        bcftools index {output.mpi}
+        bcftools call -R {input.dbSnpSmall} -T {input.targets} -m -Ou {output.mpi} | \
         bcftools filter -Ou -i'TYPE="snp" && DP>3 && QUAL>20' | \
         bcftools sort -T tmp/tmp-{wildcards.sample} --max-mem 8G -Oz -o {output.vcf}
         bcftools index {output.vcf}
