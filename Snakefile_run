@@ -551,14 +551,14 @@ rule call_variants_mpileup_fthicov:
         """
         mkdir tmp/tmp-{wildcards.sample}
         bcftools mpileup -E -Ou --insert-missed -R {input.targets} -f {input.fasta} --annotate AD,DP,SP,INFO/AD {input.bam} | \
-        bcftools call -R {input.targets} -T {input.targets} -m -Ou | \
+        bcftools call -R {input.targets} -m -Ou | \
         bcftools filter -Ou -i'TYPE="snp" && DP>3 && QUAL>20' | \
         bcftools sort -T tmp/tmp-{wildcards.sample} --max-mem 8G -Oz -o {output.vcf}
         bcftools index {output.vcf}
         """
         # bcftools index {output.vcf}
         # bcftools filter -Ou -i 'TYPE="snp"' -e 'DP<=3' | \
-
+# -T {input.targets} 
 
 # rule call_variants_yuanhua:
 #     input:
