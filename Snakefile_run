@@ -48,6 +48,7 @@ refflat_file = '/hps/nobackup/stegle/datasets/references/human/GRCh37/Homo_sapie
 #HIPSCI_VCF = '/hps/nobackup/hipsci/scratch/genotypes/imputed/unreleased/hipsci.wec.gtarray.unreleased.REL-2016-09.imputed_phased.INFO_0.4_filtered.20160912.genotypes.allchr.temp_for_endodiff_20170217.vcf.gz'
 #HIPSCI_VCF = '/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/INFO_0.4/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.INFO_0.4_filtered.20170327.genotypes.allchr.vcf.gz'
 HIPSCI_VCF = '/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.allchr.vcf.gz'
+HIPSCI_VCF_GNOMAD='/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/INFO_0.4/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.INFO_0.4_filtered.20170327.genotypes.allchr.gnomad.exomes.common.biallelic.contig_reordered.vcf.gz'
 
 star_genome_files = ['chrLength.txt', 'chrNameLength.txt', 'chrName.txt', 'chrStart.txt', 'exonInfo.tab', 'Genome', 'genomeParameters.txt', 'SA', 'SAindex', 'sjdbInfo.txt', 'sjdbList.fromGTF.out.tab', 'sjdbList.out.tab', 'transcriptInfo.tab']
 

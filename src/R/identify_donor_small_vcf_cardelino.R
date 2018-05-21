@@ -184,12 +184,12 @@ main <- function(input_vcf, output_prefix, donor_lines, donor_vcf, fasta_idx) {
         message("No common variants overlapping in sample VCF and Donor VCF\n")
         return("Done.")
     }
-    assign_em <- cell_assign_EM(A = snpmat_list$A, D = snpmat_list$D,
-                           C = snpmat_list$C,
-                           Psi = rep(1 / ncol(snpmat_list$C), ncol(snpmat_list$C)),
-                           model = "Binomial")
-    probs <- as.vector(assign_em$prob)
-    names(probs) <- colnames(assign_em$prob)
+    assign <- cell_assign_Gibbs(
+        A = snpmat_list$A, D = snpmat_list$D, C = snpmat_list$C,
+        Psi = rep(1 / ncol(snpmat_list$C), ncol(snpmat_list$C)),
+        model = "Binomial")
+    probs <- as.vector(assign$prob)
+    names(probs) <- colnames(assign$prob)
     output_df <- full_output_df(input_vcf, vcf_sample, vcf_donor, snpmat_list$sm_sample,
                                 probs, these_donors, short_names)
     output_df[["n_total_reads"]] <- sum(snpmat_list$D, na.rm = TRUE)
