@@ -8,8 +8,8 @@ dependencies:
   - conda-forge::openjdk=8.0.144  # Needed for FastQC docker - see bioconda/bioconda-recipes#5026
   - fastqc=0.11.7
   - multiqc=1.5
-  - gatk=3.8-py36_3
-  - picard=2.18.4-py36_0
+  - gatk=3.8
+  - picard=2.18.4
   - bcftools=1.8
   - salmon=0.8.2
   - star=2.6.0b
