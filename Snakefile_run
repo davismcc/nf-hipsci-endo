@@ -479,7 +479,7 @@ rule indel_realignment_gatk:
         known1=knownIndelsMills,
         known2=knownIndels100G
     output:
-        temp('star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam')
+        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam'
     shell:
         '{gatk_cmd} -T IndelRealigner -R {input.fasta} -I {input.bam} '
         '-targetIntervals {input.targetIntervals} -known {input.known1} -known {input.known2} '
@@ -487,33 +487,33 @@ rule indel_realignment_gatk:
         '-o {output}'
 
 
-rule base_recalibrator_gatk:
-    input:
-        fasta=fasta_unzipped,
-        dbSnp=dbSnpVcf,
-        bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam',
-        known1=knownIndelsMills,
-        known2=knownIndels100G
-    output:
-        temp('star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr')
-    shell:
-        '{gatk_cmd} -T BaseRecalibrator -R {input.fasta} -I {input.bam} '
-        '-knownSites {input.known1} -knownSites {input.known2} -knownSites {input.dbSnp} '
-        '-nct 2 '
-        '-o {output}'
+# rule base_recalibrator_gatk:
+#     input:
+#         fasta=fasta_unzipped,
+#         dbSnp=dbSnpVcf,
+#         bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam',
+#         known1=knownIndelsMills,
+#         known2=knownIndels100G
+#     output:
+#         temp('star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr')
+#     shell:
+#         '{gatk_cmd} -T BaseRecalibrator -R {input.fasta} -I {input.bam} '
+#         '-knownSites {input.known1} -knownSites {input.known2} -knownSites {input.dbSnp} '
+#         '-nct 2 '
+#         '-o {output}'
 
 
-rule recalibrated_writer_gatk:
-    input:
-        fasta=fasta_unzipped,
-        bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam',
-        bqsr='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr'
-    output:
-        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr.bam'
-    shell:
-        '{gatk_cmd} -T PrintReads -R {input.fasta} -I {input.bam} '
-        '-BQSR {input.bqsr} -nct 2 '
-        '-o {output}'
+# rule recalibrated_writer_gatk:
+#     input:
+#         fasta=fasta_unzipped,
+#         bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam',
+#         bqsr='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr'
+#     output:
+#         'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr.bam'
+#     shell:
+#         '{gatk_cmd} -T PrintReads -R {input.fasta} -I {input.bam} '
+#         '-BQSR {input.bqsr} -nct 2 '
+#         '-o {output}'
 
 
 # rule call_variants_gatk:
@@ -544,7 +544,8 @@ rule call_variants_mpileup_fthicov:
         dbSnp=dbSnpVcf,
         dbSnpSmall= dbSnpVcfSmall,
         targets='/hps/nobackup/hipsci/scratch/singlecell_endodiff/dbsnp_138.hg19.biallelicSNPs.HumanCoreExome12.Top1000ExpressedIpsGenes.Maf0.01.HWE0.0001.HipSci.als.tsv.gz',
-        bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr.bam'
+        bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam'
+        # bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr.bam'
     output:
         mpi=temp('vcf/{sample}/{sample}.filtered.bcf.gz'),
         midx=temp('vcf/{sample}/{sample}.filtered.bcf.gz.csi'),
@@ -616,35 +617,39 @@ rule call_variants_mpileup_fthicov:
 #         """
 
 
-rule singlecell_variant_list:
-    input:
-        'vcf/{sample}/{sample}.filtered.vcf.gz'
-    output:
-        temp('vcf/{sample}/{sample}.variant_list.txt')
-    shell:
-        """
-        set +euo pipefail
-        echo -e "1\\t1\\tA\\tC" > {output}
-        bcftools view -O v {input} | grep -v ^# | awk \'{{sub(/chr/,""); print $1"\\t"$2"\\t"$4"\\t"$5}}\' >> {output}
-        set -euo pipefail
-        """
+# rule singlecell_variant_list:
+#     input:
+#         'vcf/{sample}/{sample}.filtered.vcf.gz'
+#     output:
+#         temp('vcf/{sample}/{sample}.variant_list.txt')
+#     shell:
+#         """
+#         set +euo pipefail
+#         echo -e "1\\t1\\tA\\tC" > {output}
+#         bcftools view -O v {input} | grep -v ^# | awk \'{{sub(/chr/,""); print $1"\\t"$2"\\t"$4"\\t"$5}}\' >> {output}
+#         set -euo pipefail
+#         """
 
 
 rule filter_hipsci_overlap_variants:
     input:
         sc_vcf='vcf/{sample}/{sample}.filtered.vcf.gz',
         sc_vcf_idx='vcf/{sample}/{sample}.filtered.vcf.gz.csi',
-        variant_list='vcf/{sample}/{sample}.variant_list.txt',
         hipsci_vcf=HIPSCI_VCF
     output:
+        lst=temp('vcf/{sample}/{sample}.variant_list.txt'),
         tmp=temp('vcf/{sample}/{sample}.tmp.vcf.gz'),
         vcf=temp('vcf/{sample}/{sample}.filtered.hipsci.overlap.vcf.gz'),
         csi=temp('vcf/{sample}/{sample}.filtered.hipsci.overlap.vcf.gz.csi')
     shell:
         """
-        bcftools view -o {output.tmp} -O z -l 9 -R {input.variant_list} {input.hipsci_vcf}
+        set +euo pipefail
+        echo -e "1\\t1\\tA\\tC" > {output}
+        bcftools view -O v {input.sc_vcf} | grep -v ^# | awk \'{{sub(/chr/,""); print $1"\\t"$2"\\t"$4"\\t"$5}}\' >> {output.lst}
+        bcftools view -o {output.tmp} -O z -l 9 -R {output.lst} {input.hipsci_vcf}
         vcf-sort {output.tmp} | bgzip -c > {output.vcf}
         bcftools index {output.vcf}
+        set -euo pipefail
         """
 
 
