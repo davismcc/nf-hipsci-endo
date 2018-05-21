@@ -64,9 +64,9 @@ read_sample_vcf <- function(input_vcf) {
     ## Read in VCF from this sample
     message("Reading sample VCF\n")
     vcf_sample <- readVcf(input_vcf, "GRCh37")
-    seqlevelsStyle(vcf_sample) <- "UCSC"
     vcf_sample_filt <- vcf_sample[isSNV(vcf_sample)]
     if (length(vcf_sample_filt) > 0) {
+        seqlevelsStyle(vcf_sample) <- "UCSC"
         new_snp_names <- paste0("snp_",
                                 gsub("chr", "",
                                      gsub(":", "_",
