@@ -1,0 +1,327 @@
+{
+    "__default__" :
+    {
+        "memory" : "16000",
+        "n" : 1,
+        "queue" : "research",
+        "name" : "ENDO.{rule}.{wildcards}",
+        "output" : "logs/{rule}.out",
+        "error" : "logs/{rule}.err"
+    },
+    "seq_metadata_collect" :
+    {
+        "memory" : "2000",
+        "n" : 1,
+    },
+    "cram2fastq" :
+    {
+        "memory" : "12000",
+        "n" : 1,
+    },
+    "merge_qc_sce" :
+    {
+        "memory" : "80000",
+        "n" : 1,
+    },
+    "trim_fastq_SS2" :
+    {
+        "memory" : "4000",
+        "n" : 1,
+    },
+    "identify_donor_runs" :
+    {
+        "memory" : "14000",
+        "n" : 1,
+    },
+    "identify_donor_collect" :
+    {
+        "memory" : "4000",
+        "n" : 1,
+    },
+    "merge_cell_vcfs" :
+    {
+        "memory" : "4000",
+        "n" : 1,
+    },
+    "fastqc_reports" :
+    {
+        "memory" : "8000",
+        "n" : 1,
+    },
+    "salmon_quant" :
+    {
+        "memory" : "12000",
+        "n" : 4,
+    },
+    "salmon_quant_GRCh38" :
+    {
+        "memory" : "12000",
+        "n" : 4,
+    },
+    "salmon_to_sceset_GRCh37" :
+    {
+        "memory" : "64000",
+        "n" : 1,
+    },
+    "salmon_to_sceset_GRCh38" :
+    {
+        "memory" : "64000",
+        "n" : 1,
+    },
+    "kallisto_quant" :
+    {
+        "memory" : "16000",
+        "n" : 2,
+    },
+    "kallisto_to_sceset" :
+    {
+        "memory" : "64000",
+        "n" : 1,
+    },
+    "call_variants_gatk" :
+    {
+        "memory" : "20000",
+        "n" : 1,
+    },
+    "align_with_star_2pass_SS2" :
+    {
+        "memory" : "36000",
+        "n" : 12,
+    },
+    "sort_alignment" :
+    {
+        "memory" : "13000",
+        "n" : 4,
+    },
+    "picard_read_groups" :
+    {
+        "memory" : "2500",
+        "n" : 1,
+    },
+    "picard_mark_dups" :
+    {
+        "memory" : "22000",
+        "n" : 1,
+    },
+    "split_n_trim_gatk" :
+    {
+        "memory" : "22000",
+        "n" : 1,
+    },
+    "indel_realignment_gatk" :
+    {
+        "memory" : "20000",
+        "n" : 1,
+    },
+    "recalibrated_writer_gatk" :
+    {
+        "memory" : "24000",
+        "n" : 1,
+    },
+    "base_recalibrator_gatk" :
+    {
+        "memory" : "25000",
+        "n" : 1,
+    },
+    "picard_qc_metrics" :
+    {
+        "memory" : "12000",
+        "n" : 1,
+    },
+    "build_star_genome_indexes" :
+    {
+        "memory" : "64000",
+        "n" : 2,
+    },
+    "build_indiv_star_genome_indexes" :
+    {
+        "memory" : "64000",
+        "n" : 2,
+    },
+    "filter_variants_gatk" :
+    {
+        "memory" : "8000",
+        "n" : 1,
+    },
+    "bgzip_vcf" :
+    {
+        "memory" : "1000",
+        "n" : 1,
+    },
+    "index_bgzip_vcf" :
+    {
+        "memory" : "4000",
+        "n" : 1,
+    },
+    "singlecell_variant_list" :
+    {
+        "memory" : "4000",
+        "n" : 1,
+    },
+    "filter_hipsci_overlap_variants" :
+    {
+        "memory" : "500",
+        "n" : 1,
+    },
+    "index_hipsci_overlap_vcf" :
+    {
+        "memory" : "4000",
+        "n" : 1,
+    },
+    "split_n_trim_gatk_10x" :
+    {
+        "memory" : "36000",
+        "n" : 1,
+    },
+    "indel_realignment_gatk_10x" :
+    {
+        "memory" : "40000",
+        "n" : 1,
+    },
+    "recalibrated_writer_gatk_10x" :
+    {
+        "memory" : "36000",
+        "n" : 8,
+    },
+    "base_recalibrator_gatk_10x" :
+    {
+        "memory" : "36000",
+        "n" : 8,
+    },
+    "picard_mark_dups_10x" :
+    {
+        "memory" : "72000",
+        "n" : 1,
+    },
+    "picard_qc_metrics_10x" :
+    {
+        "memory" : "8000",
+        "n" : 4,
+    },
+    "call_variants_gatk_10x_pooled" :
+    {
+        "memory" : "80000",
+        "n" : 1,
+    },
+    "call_variants_gatk_10x_barcode" :
+    {
+        "memory" : "20000",
+        "n" : 4,
+    },
+    "index_barcode_bams_10x" :
+    {
+        "memory" : "2000",
+        "n" : 1,
+    },
+    "align_with_star_2pass_10x" :
+    {
+        "memory" : "80000",
+        "n" : 4,
+    },
+    "identify_donor_collect_10x" :
+    {
+        "memory" : "4000",
+        "n" : 1,
+    },
+    "identify_donor_collect_10x_cardelino" :
+    {
+        "memory" : "4000",
+        "n" : 1,
+    },
+    "identify_donor_runs_10x" :
+    {
+        "memory" : "12000",
+        "n" : 1,
+    },
+    "identify_donor_runs_10x_cardelino" :
+    {
+        "memory" : "12000",
+        "n" : 1,
+    },
+    "index_hipsci_overlap_vcf_10x" :
+    {
+        "memory" : "300",
+        "n" : 1,
+    },
+    "filter_hipsci_overlap_variants_10x" :
+    {
+        "memory" : "200",
+        "n" : 1,
+    },
+    "singlecell_variant_list_10x" :
+    {
+        "memory" : "300",
+        "n" : 1,
+    },
+    "bgzip_vcf_10x" :
+    {
+        "memory" : "300",
+        "n" : 1,
+    },
+    "index_bgzip_vcf_10x" :
+    {
+        "memory" : "300",
+        "n" : 1,
+    },
+    "filter_variants_gatk_10x" :
+    {
+        "memory" : "1800",
+        "n" : 1,
+    },
+    "call_variants_gatk_pooled" :
+    {
+        "memory" : "80000",
+        "n" : 1,
+    },
+    "call_variants_gatk_10x_barcode" :
+    {
+        "memory" : "20000",
+        "n" : 1,
+    },
+    "picard_read_groups_barcode_10x" :
+    {
+        "memory" : "2500",
+        "n" : 1,
+    },
+    "split_bam_by_barcode_10x" :
+    {
+        "memory" : "300",
+        "n" : 1,
+    },
+    "bam2fastq_10x" :
+    {
+        "memory" : "500",
+        "n" : 1,
+    },
+    "make_unmapped_bam_10x" :
+    {
+        "memory" : "20000",
+        "n" : 1,
+    },
+    "index_star_bams_10x" :
+    {
+        "memory" : "500",
+        "n" : 1,
+    },
+    "picard_sort_qname_10x" :
+    {
+        "memory" : "20000",
+        "n" : 1,
+    },
+    "picard_sort_coord_10x" :
+    {
+        "memory" : "24000",
+        "n" : 1,
+    },
+    "bam_add_chr_prefix_10x" :
+    {
+        "memory" : "2000",
+        "n" : 1,
+    },
+    "call_variants_mpileup_fthicov" :
+    {
+        "memory" : "8000",
+        "n" : 1,
+        "queue" : "research"
+    }
+}
