@@ -56,26 +56,26 @@ pkgs <- c(
   "roxygen2",
   "rprojroot",
   "scales",
-  "scater",
-  "snpStats",
   "superheat",
   "tensorflow",
   "testthat",
-  "tidyverse",
   "tufte",
   "UpSetR",
-  "vcfR",
-  "VariantAnnotation",
   "VGAM",
   "viridis",
   "wesanderson",
   "xtable"
 )
 
+# check that desired packages are available
 ap.db <- available.packages(contrib.url(biocinstallRepos()))
 ap <- rownames(ap.db)
-
 pkgs_to_install <- pkgs[pkgs %in% ap]
+
+# do not reinstall packages that are already installed in the image
+ip.db <- installed.packages()
+ip <- rownames(ip)
+pkgs_to_install <- pkgs_to_install[!(pkgs_to_install %in% ip)]
 
 biocLite(pkgs_to_install)
 # install.packages("rmote", repos = c(getOption("repos"), "http://cloudyr.github.io/drat"))
@@ -109,11 +109,16 @@ sc_pkgs <- c(
   "snpStats",
   "tximport",
   "variancePartition",
+  "VariantAnnotation",
   "vcfR",
   "zinbwave"
 )
 
 pkgs_to_install <- sc_pkgs[sc_pkgs %in% ap]
+# do not reinstall packages that are already installed in the image
+ip.db <- installed.packages()
+ip <- rownames(ip)
+pkgs_to_install <- pkgs_to_install[!(pkgs_to_install %in% ip)]
 
 biocLite(pkgs_to_install)
 
