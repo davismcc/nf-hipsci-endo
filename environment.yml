@@ -23,5 +23,6 @@ dependencies:
   - multiqc=1.5
   - samtools=1.8
   - emacs=25.2
+  - tabix=0.2.5
   - wget
 
