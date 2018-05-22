@@ -124,7 +124,7 @@ rule all:
         cells_merged_vcfs,
         picard_QC_output,
         feature_counts_output,
-        leaf_cutter_junc
+        #leaf_cutter_junc
 
 
 rule build_star_genome_indexes:
