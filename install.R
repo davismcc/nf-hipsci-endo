@@ -74,7 +74,7 @@ pkgs_to_install <- pkgs[pkgs %in% ap]
 
 # do not reinstall packages that are already installed in the image
 ip.db <- installed.packages()
-ip <- rownames(ip)
+ip <- rownames(ip.db)
 pkgs_to_install <- pkgs_to_install[!(pkgs_to_install %in% ip)]
 
 biocLite(pkgs_to_install)
@@ -117,7 +117,7 @@ sc_pkgs <- c(
 pkgs_to_install <- sc_pkgs[sc_pkgs %in% ap]
 # do not reinstall packages that are already installed in the image
 ip.db <- installed.packages()
-ip <- rownames(ip)
+ip <- rownames(ip.db)
 pkgs_to_install <- pkgs_to_install[!(pkgs_to_install %in% ip)]
 
 biocLite(pkgs_to_install)
