@@ -135,7 +135,7 @@ rule all:
         "seq_metadata.tsv",
         sces,
         cells_merged_vcfs,
-        picard_QC_output
+        picard_QC_output,
         feature_counts_output,
         leaf_cutter_junc
 
