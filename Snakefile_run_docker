@@ -44,27 +44,15 @@ HIPSCI_VCF_GNOMAD = os.path.join(references_dir, 'hipsci.wec.gtarray.HumanCoreEx
 anno_gencode_v19 = os.path.join(references_dir, 'gencode.v19.annotation_ERCC.gtf')
 salmon_idx = os.path.join(references_dir, 'Homo_sapiens.GRCh37.rel75.cdna.all.ERCC92.salmon_v0.8.2_idx')
 salmon_idx_GRCh38 = os.path.join(references_dir, 'Homo_sapiens.GRCh38.rel85.cdna.all.ERCC92.salmon_v0.8.2_idx')
-
+annos_featurecounts = os.path.join(references_dir, 'Homo_sapiens.GRCh37.75_c_hg19_rmsk_TE_ensemblChrmapping.filtered.hipsciexpressed.gtf')
+targets_callvars = os.path.join(references_dir, 'dbsnp_138.hg19.biallelicSNPs.HumanCoreExome12.Top1000ExpressedIpsGenes.Maf0.01.HWE0.0001.HipSci.als.tsv.gz')
 
 ## parameter objects and samples
 GENOME = 'genome.fa'
-STAR_GENOME_DIR = '/hps/nobackup/stegle/datasets/references/human/STAR_GRCh37.75_ERCC'
+STAR_GENOME_DIR = 'references/STAR_GRCh37.75_ERCC'
 star_genome_files = ['chrLength.txt', 'chrNameLength.txt', 'chrName.txt', 'chrStart.txt', 'exonInfo.tab', 'Genome', 'genomeParameters.txt', 'SA', 'SAindex', 'sjdbInfo.txt', 'sjdbList.fromGTF.out.tab', 'sjdbList.out.tab', 'transcriptInfo.tab']
 
 ## define commands
-# python_cmd = '/nfs/software/stegle/users/davis/conda-envs/py3/bin/python'
-# python2_cmd = '/nfs/software/stegle/users/davis/conda-envs/py2/bin/python'
-# star_cmd = '/nfs/software/stegle/bin/STAR'
-# gatk_cmd = '/nfs/software/stegle/users/dseaton/java/jdk1.8.0_112/bin/java -Xmx50g -Xms8g -Djava.io.tmpdir=/hps/nobackup/hipsci/scratch/singlecell_endodiff/tmp -jar /hps/nobackup/stegle/users/mjbonder/tools/GATK/GenomeAnalysisTK.jar'
-# picard_cmd='/nfs/software/stegle/users/dseaton/java/jdk1.8.0_112/bin/java -jar /nfs/software/stegle/users/dseaton/picard/picard.jar'
-# salmon_cmd = '/nfs/software/stegle/users/davis/Salmon-0.8.2_linux_x86_64/bin/salmon'
-# read_salmon_to_scesets_cmd = '../../../src/preprocessing/read_salmon_to_scesets.R'
-# rscript_cmd = 'singularity exec /hps/nobackup/hipsci/scratch/biocplus.img Rscript'
-# Rscript_cmd = '/nfs/software/stegle/users/davis/conda-envs/sc/bin/Rscript'
-# leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
-# featurecounts_cmd = '/hps/nobackup/stegle/users/mjbonder/tools/subread-1.6.0-source/bin/featureCounts'
-# trim_galore_cmd = '/nfs/software/stegle/trim_galore/trim_galore'
-#-----------
 bcftools_cmd = 'singularity exec ../../../endo.img bcftools'
 featurecounts_cmd = 'singularity exec ../../../endo.img featureCounts'
 #gatk_cmd = 'singularity exec ../../../endo.img gatk'
@@ -76,7 +64,7 @@ rscript_cmd = 'singularity exec ../../../endo.img Rscript'
 salmon_cmd = 'singularity exec ../../../endo.img salmon'
 samtools_cmd = 'singularity exec ../../../endo.img samtools'
 star_cmd = 'singularity exec ../../../endo.img STAR'
-#tabix_cmd = 'singularity exec ../../../endo.img tabix'
+tabix_cmd = 'singularity exec ../../../endo.img tabix'
 trim_galore_cmd = 'singularity exec ../../../endo.img trim_galore'
 ## scripts
 read_salmon_to_scesets_cmd = '../../../src/preprocessing/read_salmon_to_scesets.R'
@@ -115,11 +103,11 @@ feature_counts_output.append(expand('featureCounts/unique_counts/{sample}.gene.c
 feature_counts_output.append(expand('featureCounts/unique_counts/{sample}.exon.counts.unique.tsv', run=run, sample=SAMPLES))
 
 
-hipsci_chr_vcf = []
-hipsci_chr_vcf_idx = []
-for i in range(1, 23):
-    hipsci_chr_vcf.append('/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.chr%s.vcf.gz' %str(i))
-    hipsci_chr_vcf_idx.append('/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.chr%s.vcf.gz.tbi' %str(i))
+# hipsci_chr_vcf = []
+# hipsci_chr_vcf_idx = []
+# for i in range(1, 23):
+#     hipsci_chr_vcf.append('/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.chr%s.vcf.gz' %str(i))
+#     hipsci_chr_vcf_idx.append('/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.chr%s.vcf.gz.tbi' %str(i))
 
 gatk_split_bam_output = [filename for elem in gatk_split_bam_output for filename in elem]
 picard_QC_output = [filename for elem in picard_QC_output for filename in elem]
@@ -188,13 +176,13 @@ rule create_fasta_dict:
         '{picard_cmd} CreateSequenceDictionary R={input} O={output}'
 
 
-rule create_vcf_file_list:
-    output:
-        'data_raw/Full-2017-03-29_genotype_vcf_file_list.txt'
-    run:
-        with open(output[0], "w+") as outfile:
-                for i in range(1, 23):
-                        outfile.write('/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.chr%s.vcf.gz\n' %str(i))
+# rule create_vcf_file_list:
+#     output:
+#         'data_raw/Full-2017-03-29_genotype_vcf_file_list.txt'
+#     run:
+#         with open(output[0], "w+") as outfile:
+#                 for i in range(1, 23):
+#                         outfile.write('/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.chr%s.vcf.gz\n' %str(i))
 
 
 rule generate_new_tabix_idx:
@@ -435,7 +423,7 @@ rule create_junc_files:
 rule count_genes_unique:
     input:
         bam = 'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.dedup.bam',
-        annotation='/hps/nobackup/hipsci/scratch/trans_eqtls/Annotation/Homo_sapiens.GRCh37.75_c_hg19_rmsk_TE_ensemblChrmapping.filtered.hipsciexpressed.gtf'
+        annotation=annos_featurecounts
     output:
         'featureCounts/unique_counts/{sample}.gene.counts.unique.tsv'
     priority: 4
@@ -449,7 +437,7 @@ rule count_genes_unique:
 rule count_features_unique:
     input:
         bam = 'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.dedup.bam',
-        annotation='/hps/nobackup/hipsci/scratch/trans_eqtls/Annotation/Homo_sapiens.GRCh37.75_c_hg19_rmsk_TE_ensemblChrmapping.filtered.hipsciexpressed.gtf'
+        annotation=annos_featurecounts
     output:
         'featureCounts/unique_counts/{sample}.exon.counts.unique.tsv'
     priority: 4
@@ -496,7 +484,7 @@ rule call_variants_mpileup_fthicov:
         fa_dict=fasta_dict,
         dbSnp=dbSnpVcf,
         dbSnpSmall= dbSnpVcfSmall,
-        targets='/hps/nobackup/hipsci/scratch/singlecell_endodiff/dbsnp_138.hg19.biallelicSNPs.HumanCoreExome12.Top1000ExpressedIpsGenes.Maf0.01.HWE0.0001.HipSci.als.tsv.gz',
+        targets=targets_callvars,
         bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.bam'
         # bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr.bam'
     output:
