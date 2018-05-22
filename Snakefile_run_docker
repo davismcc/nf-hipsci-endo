@@ -49,7 +49,7 @@ targets_callvars = os.path.join(references_dir, 'dbsnp_138.hg19.biallelicSNPs.Hu
 
 ## parameter objects and samples
 GENOME = 'genome.fa'
-STAR_GENOME_DIR = 'references/STAR_GRCh37.75_ERCC'
+STAR_GENOME_DIR = os.path.join(references_dir, 'STAR_GRCh37.75_ERCC')
 star_genome_files = ['chrLength.txt', 'chrNameLength.txt', 'chrName.txt', 'chrStart.txt', 'exonInfo.tab', 'Genome', 'genomeParameters.txt', 'SA', 'SAindex', 'sjdbInfo.txt', 'sjdbList.fromGTF.out.tab', 'sjdbList.out.tab', 'transcriptInfo.tab']
 
 ## define commands
