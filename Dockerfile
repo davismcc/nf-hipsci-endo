@@ -34,7 +34,7 @@ COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
 ENV PATH /opt/conda/envs/davismcc-nf-hipsci-endo/bin:$PATH
 
-# FROM rocker/verse:3.5.0
-# RUN mkdir -p /usr/local/lib/R/site-library
-# ADD install.R /tmp/
-# RUN R -f /tmp/install.R
+FROM rocker/verse:3.5.0
+RUN mkdir -p /usr/local/lib/R/site-library
+ADD install.R /tmp/
+RUN R -f /tmp/install.R
