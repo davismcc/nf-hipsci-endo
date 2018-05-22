@@ -69,6 +69,7 @@ trim_galore_cmd = '/nfs/software/stegle/trim_galore/trim_galore'
 bcftools_cmd = 'singularity exec ../../../endo.img bcftools'
 featurecounts_cmd = 'singularity exec ../../../endo.img featureCounts'
 #gatk_cmd = 'singularity exec ../../../endo.img gatk'
+gatk_cmd = 'singularity exec ../../../gatk.img' # gatk 4
 #leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
 picard_cmd = 'singularity exec ../../../endo.img picard'
 python_cmd = 'singularity exec ../../../endo.img python'
@@ -76,7 +77,7 @@ rscript_cmd = 'singularity exec ../../../endo.img Rscript
 salmon_cmd = 'singularity exec ../../../endo.img salmon'
 samtools_cmd = 'singularity exec ../../../endo.img samtools'
 star_cmd = 'singularity exec ../../../endo.img STAR'
-tabix_cmd = 'singularity exec ../../../endo.img tabix'
+#tabix_cmd = 'singularity exec ../../../endo.img tabix'
 trim_galore_cmd = 'singularity exec ../../../endo.img trim_galore'
 ## scripts
 read_salmon_to_scesets_cmd = '../../../src/preprocessing/read_salmon_to_scesets.R'
@@ -469,25 +470,24 @@ rule split_n_trim_gatk:
     output:
         temp('star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.bam')
     shell:
-        '{gatk_cmd} -T SplitNCigarReads -R {input.fasta} -I {input.bam} -o {output} '
-        '-rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 '
-        '-U ALLOW_N_CIGAR_READS '
+        '{gatk_cmd} SplitNCigarReads -R {input.fasta} -I {input.bam} -O {output}'
 
 
-rule indel_realignment_gatk:
-    input:
-        fasta=fasta_unzipped,
-        bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.bam',
-        targetIntervals=reAlignmentIntervals,
-        known1=knownIndelsMills,
-        known2=knownIndels100G
-    output:
-        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam'
-    shell:
-        '{gatk_cmd} -T IndelRealigner -R {input.fasta} -I {input.bam} '
-        '-targetIntervals {input.targetIntervals} -known {input.known1} -known {input.known2} '
-        '-U ALLOW_N_CIGAR_READS --consensusDeterminationModel KNOWNS_ONLY --LODThresholdForCleaning 0.4  '
-        '-o {output}'
+## IndelRealigner is no longer included in GATK as of version 4.0.0.0
+# rule indel_realignment_gatk:
+#     input:
+#         fasta=fasta_unzipped,
+#         bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.bam',
+#         targetIntervals=reAlignmentIntervals,
+#         known1=knownIndelsMills,
+#         known2=knownIndels100G
+#     output:
+#         'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam'
+#     shell:
+#         '{gatk_cmd} -T IndelRealigner -R {input.fasta} -I {input.bam} '
+#         '-targetIntervals {input.targetIntervals} -known {input.known1} -known {input.known2} '
+#         '-U ALLOW_N_CIGAR_READS --consensusDeterminationModel KNOWNS_ONLY --LODThresholdForCleaning 0.4  '
+#         '-o {output}'
 
 
 rule call_variants_mpileup_fthicov:
@@ -498,7 +498,7 @@ rule call_variants_mpileup_fthicov:
         dbSnp=dbSnpVcf,
         dbSnpSmall= dbSnpVcfSmall,
         targets='/hps/nobackup/hipsci/scratch/singlecell_endodiff/dbsnp_138.hg19.biallelicSNPs.HumanCoreExome12.Top1000ExpressedIpsGenes.Maf0.01.HWE0.0001.HipSci.als.tsv.gz',
-        bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bam'
+        bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.bam'
         # bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.realigned.bqsr.bam'
     output:
         mpi=temp('vcf/{sample}/{sample}.filtered.bcf.gz'),
