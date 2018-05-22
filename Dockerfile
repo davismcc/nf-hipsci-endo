@@ -34,9 +34,9 @@ COPY environment.yml /
 RUN conda env create -f /environment.yml python=3.6 && conda clean -a
 ENV PATH /opt/conda/envs/davismcc-nf-hipsci-endo/bin:$PATH
 
-FROM broadinstitute/gatk3
+FROM broadinstitute/gatk
 
-# FROM rocker/verse:3.5.0
-# RUN mkdir -p /usr/local/lib/R/site-library
-# ADD install.R /tmp/
-# RUN R -f /tmp/install.R
+FROM rocker/verse:3.5.0
+RUN mkdir -p /usr/local/lib/R/site-library
+ADD install.R /tmp/
+RUN R -f /tmp/install.R
