@@ -42,9 +42,9 @@ fasta_unzipped_GRCh38 = os.path.join(references_dir, 'Homo_sapiens.GRCh38.dna.pr
 refflat_file = os.path.join(references_dir, 'Homo_sapiens.GRCh37.75_ERCC.ref_flat.txt')
 HIPSCI_VCF = os.path.join(references_dir, 'hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.allchr.vcf.gz')
 HIPSCI_VCF_GNOMAD = os.path.join(references_dir, 'hipsci.wec.gtarray.HumanCoreExome.imputed_phased.INFO_0.4_filtered.20170327.genotypes.allchr.gnomad.exomes.common.biallelic.contig_reordered.vcf.gz')
-anno_gencode_v19 = os.path.join(references_dir, 'gencode.v19.annotation_ERCC.gtf'
-salmon_idx = os.path.join(references_dir, 'Homo_sapiens.GRCh37.rel75.cdna.all.ERCC92.salmon_v0.8.2_idx'
-salmon_idx_GRCh38 = os.path.join(references_dir, 'Homo_sapiens.GRCh38.rel85.cdna.all.ERCC92.salmon_v0.8.2_idx'
+anno_gencode_v19 = os.path.join(references_dir, 'gencode.v19.annotation_ERCC.gtf')
+salmon_idx = os.path.join(references_dir, 'Homo_sapiens.GRCh37.rel75.cdna.all.ERCC92.salmon_v0.8.2_idx')
+salmon_idx_GRCh38 = os.path.join(references_dir, 'Homo_sapiens.GRCh38.rel85.cdna.all.ERCC92.salmon_v0.8.2_idx')
 
 
 ## parameter objects and samples
@@ -53,18 +53,18 @@ STAR_GENOME_DIR = '/hps/nobackup/stegle/datasets/references/human/STAR_GRCh37.75
 star_genome_files = ['chrLength.txt', 'chrNameLength.txt', 'chrName.txt', 'chrStart.txt', 'exonInfo.tab', 'Genome', 'genomeParameters.txt', 'SA', 'SAindex', 'sjdbInfo.txt', 'sjdbList.fromGTF.out.tab', 'sjdbList.out.tab', 'transcriptInfo.tab']
 
 ## define commands
-python_cmd = '/nfs/software/stegle/users/davis/conda-envs/py3/bin/python'
-python2_cmd = '/nfs/software/stegle/users/davis/conda-envs/py2/bin/python'
-star_cmd = '/nfs/software/stegle/bin/STAR'
-gatk_cmd = '/nfs/software/stegle/users/dseaton/java/jdk1.8.0_112/bin/java -Xmx50g -Xms8g -Djava.io.tmpdir=/hps/nobackup/hipsci/scratch/singlecell_endodiff/tmp -jar /hps/nobackup/stegle/users/mjbonder/tools/GATK/GenomeAnalysisTK.jar'
-picard_cmd='/nfs/software/stegle/users/dseaton/java/jdk1.8.0_112/bin/java -jar /nfs/software/stegle/users/dseaton/picard/picard.jar'
-salmon_cmd = '/nfs/software/stegle/users/davis/Salmon-0.8.2_linux_x86_64/bin/salmon'
-read_salmon_to_scesets_cmd = '../../../src/preprocessing/read_salmon_to_scesets.R'
-rscript_cmd = 'singularity exec /hps/nobackup/hipsci/scratch/biocplus.img Rscript'
-Rscript_cmd = '/nfs/software/stegle/users/davis/conda-envs/sc/bin/Rscript'
-leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
-featurecounts_cmd = '/hps/nobackup/stegle/users/mjbonder/tools/subread-1.6.0-source/bin/featureCounts'
-trim_galore_cmd = '/nfs/software/stegle/trim_galore/trim_galore'
+# python_cmd = '/nfs/software/stegle/users/davis/conda-envs/py3/bin/python'
+# python2_cmd = '/nfs/software/stegle/users/davis/conda-envs/py2/bin/python'
+# star_cmd = '/nfs/software/stegle/bin/STAR'
+# gatk_cmd = '/nfs/software/stegle/users/dseaton/java/jdk1.8.0_112/bin/java -Xmx50g -Xms8g -Djava.io.tmpdir=/hps/nobackup/hipsci/scratch/singlecell_endodiff/tmp -jar /hps/nobackup/stegle/users/mjbonder/tools/GATK/GenomeAnalysisTK.jar'
+# picard_cmd='/nfs/software/stegle/users/dseaton/java/jdk1.8.0_112/bin/java -jar /nfs/software/stegle/users/dseaton/picard/picard.jar'
+# salmon_cmd = '/nfs/software/stegle/users/davis/Salmon-0.8.2_linux_x86_64/bin/salmon'
+# read_salmon_to_scesets_cmd = '../../../src/preprocessing/read_salmon_to_scesets.R'
+# rscript_cmd = 'singularity exec /hps/nobackup/hipsci/scratch/biocplus.img Rscript'
+# Rscript_cmd = '/nfs/software/stegle/users/davis/conda-envs/sc/bin/Rscript'
+# leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
+# featurecounts_cmd = '/hps/nobackup/stegle/users/mjbonder/tools/subread-1.6.0-source/bin/featureCounts'
+# trim_galore_cmd = '/nfs/software/stegle/trim_galore/trim_galore'
 #-----------
 bcftools_cmd = 'singularity exec ../../../endo.img bcftools'
 featurecounts_cmd = 'singularity exec ../../../endo.img featureCounts'
@@ -73,7 +73,7 @@ gatk_cmd = 'singularity exec ../../../gatk.img' # gatk 4
 #leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
 picard_cmd = 'singularity exec ../../../endo.img picard'
 python_cmd = 'singularity exec ../../../endo.img python'
-rscript_cmd = 'singularity exec ../../../endo.img Rscript
+rscript_cmd = 'singularity exec ../../../endo.img Rscript'
 salmon_cmd = 'singularity exec ../../../endo.img salmon'
 samtools_cmd = 'singularity exec ../../../endo.img samtools'
 star_cmd = 'singularity exec ../../../endo.img STAR'
