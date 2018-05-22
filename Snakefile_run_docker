@@ -127,24 +127,6 @@ rule all:
         leaf_cutter_junc
 
 
-rule picard_CollectRnaSeqMetrics:
-    input:
-        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.out.bam'
-    output:
-        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.out.rna_metrics'
-    shell:
-        '{picard_cmd} CollectRnaSeqMetrics I={input} O={output} REF_FLAT={refflat_file} STRAND=NONE'
-
-
-rule picard_CollectJumpingLibraryMetrics:
-    input:
-        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.dedup.bam'
-    output:
-        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.dedup.jump_metrics'
-    shell:
-        '{picard_cmd} CollectJumpingLibraryMetrics I={input} O={output}'
-
-
 rule build_star_genome_indexes:
     input:
         fasta=fasta_unzipped,
@@ -185,30 +167,30 @@ rule create_fasta_dict:
 #                         outfile.write('/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.chr%s.vcf.gz\n' %str(i))
 
 
-rule generate_new_tabix_idx:
-    input:
-        hipsci_chr_vcf
-    output:
-        hipsci_chr_vcf_idx
-    run:
-        for chrom in hipsci_chr_vcf:
-            print(chrom)
-            cmd = '{tabix_cmd} -f -p vcf ' + chrom
-            print(cmd)
-            subprocess.run(cmd, shell = True)
+# rule generate_new_tabix_idx:
+#     input:
+#         hipsci_chr_vcf
+#     output:
+#         hipsci_chr_vcf_idx
+#     run:
+#         for chrom in hipsci_chr_vcf:
+#             print(chrom)
+#             cmd = '{tabix_cmd} -f -p vcf ' + chrom
+#             print(cmd)
+#             subprocess.run(cmd, shell = True)
 
 
-rule create_hipsci_vcf:
-    input:
-        'data_raw/Full-2017-03-29_genotype_vcf_file_list.txt'
-    output:
-        vcf=HIPSCI_VCF,
-        vcf_idx=HIPSCI_VCF + '.tbi'
-    shell:
-        """
-        {bcftools_cmd} concat -f {input} -O z > {output.vcf}
-        {tabix_cmd} -f -p vcf {output.vcf}
-        """
+# rule create_hipsci_vcf:
+#     input:
+#         'data_raw/Full-2017-03-29_genotype_vcf_file_list.txt'
+#     output:
+#         vcf=HIPSCI_VCF,
+#         vcf_idx=HIPSCI_VCF + '.tbi'
+#     shell:
+#         """
+#         {bcftools_cmd} concat -f {input} -O z > {output.vcf}
+#         {tabix_cmd} -f -p vcf {output.vcf}
+#         """
 
 
 rule build_salmon_index:
@@ -396,6 +378,24 @@ rule picard_mark_dups:
     shell:
         '{picard_cmd} MarkDuplicates I={input} O={output.bam} CREATE_INDEX=true '
         'VALIDATION_STRINGENCY=SILENT M={output.metrics} REMOVE_DUPLICATES=true'
+
+
+rule picard_CollectRnaSeqMetrics:
+    input:
+        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.out.bam'
+    output:
+        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.out.rna_metrics'
+    shell:
+        '{picard_cmd} CollectRnaSeqMetrics I={input} O={output} REF_FLAT={refflat_file} STRAND=NONE'
+
+
+rule picard_CollectJumpingLibraryMetrics:
+    input:
+        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.dedup.bam'
+    output:
+        'star/{sample}/{sample}.2pass.Aligned.sortedByCoord.dedup.jump_metrics'
+    shell:
+        '{picard_cmd} CollectJumpingLibraryMetrics I={input} O={output}'
 
 
 rule write_primary_alignment_bam:

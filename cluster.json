@@ -10,318 +10,259 @@
     },
     "seq_metadata_collect" :
     {
-        "memory" : "2000",
-        "n" : 1,
+        "memory" : "2000"
     },
     "cram2fastq" :
     {
-        "memory" : "12000",
-        "n" : 1,
+        "memory" : "12000"
     },
     "merge_qc_sce" :
     {
-        "memory" : "80000",
-        "n" : 1,
+        "memory" : "80000"
     },
     "trim_fastq_SS2" :
     {
-        "memory" : "4000",
-        "n" : 1,
+        "memory" : "4000"
     },
     "identify_donor_runs" :
     {
-        "memory" : "14000",
-        "n" : 1,
+        "memory" : "14000"
     },
     "identify_donor_collect" :
     {
-        "memory" : "4000",
-        "n" : 1,
+        "memory" : "4000"
     },
     "merge_cell_vcfs" :
     {
-        "memory" : "4000",
-        "n" : 1,
+        "memory" : "4000"
     },
     "fastqc_reports" :
     {
-        "memory" : "8000",
-        "n" : 1,
+        "memory" : "8000"
     },
     "salmon_quant" :
     {
         "memory" : "12000",
-        "n" : 4,
+        "n" : 4
     },
     "salmon_quant_GRCh38" :
     {
         "memory" : "12000",
-        "n" : 4,
+        "n" : 4
     },
     "salmon_to_sceset_GRCh37" :
     {
-        "memory" : "64000",
-        "n" : 1,
+        "memory" : "64000"
     },
     "salmon_to_sceset_GRCh38" :
     {
-        "memory" : "64000",
-        "n" : 1,
+        "memory" : "64000"
     },
     "kallisto_quant" :
     {
         "memory" : "16000",
-        "n" : 2,
+        "n" : 2
     },
     "kallisto_to_sceset" :
     {
-        "memory" : "64000",
-        "n" : 1,
+        "memory" : "64000"
     },
     "call_variants_gatk" :
     {
-        "memory" : "20000",
-        "n" : 1,
+        "memory" : "20000"
     },
     "align_with_star_2pass_SS2" :
     {
         "memory" : "36000",
-        "n" : 12,
+        "n" : 12
     },
     "sort_alignment" :
     {
         "memory" : "13000",
-        "n" : 4,
+        "n" : 4
     },
     "picard_read_groups" :
     {
-        "memory" : "2500",
-        "n" : 1,
+        "memory" : "2500"
     },
     "picard_mark_dups" :
     {
-        "memory" : "22000",
-        "n" : 1,
+        "memory" : "22000"
     },
     "split_n_trim_gatk" :
     {
-        "memory" : "22000",
-        "n" : 1,
+        "memory" : "22000"
     },
     "indel_realignment_gatk" :
     {
-        "memory" : "20000",
-        "n" : 1,
+        "memory" : "20000"
     },
     "recalibrated_writer_gatk" :
     {
-        "memory" : "24000",
-        "n" : 1,
+        "memory" : "24000"
     },
     "base_recalibrator_gatk" :
     {
-        "memory" : "25000",
-        "n" : 1,
+        "memory" : "25000"
     },
     "picard_qc_metrics" :
     {
-        "memory" : "12000",
-        "n" : 1,
+        "memory" : "12000"
     },
     "build_star_genome_indexes" :
     {
-        "memory" : "64000",
-        "n" : 2,
+        "memory" : "64000"
     },
     "build_indiv_star_genome_indexes" :
     {
         "memory" : "64000",
-        "n" : 2,
+        "n" : 2
     },
     "filter_variants_gatk" :
     {
-        "memory" : "8000",
-        "n" : 1,
+        "memory" : "8000"
     },
     "bgzip_vcf" :
     {
-        "memory" : "1000",
-        "n" : 1,
+        "memory" : "1000"
     },
     "index_bgzip_vcf" :
     {
-        "memory" : "4000",
-        "n" : 1,
+        "memory" : "4000"
     },
     "singlecell_variant_list" :
     {
-        "memory" : "4000",
-        "n" : 1,
+        "memory" : "4000"
     },
     "filter_hipsci_overlap_variants" :
     {
-        "memory" : "500",
-        "n" : 1,
+        "memory" : "500"
     },
     "index_hipsci_overlap_vcf" :
     {
-        "memory" : "4000",
-        "n" : 1,
+        "memory" : "4000"
     },
     "split_n_trim_gatk_10x" :
     {
-        "memory" : "36000",
-        "n" : 1,
+        "memory" : "36000"
     },
     "indel_realignment_gatk_10x" :
     {
-        "memory" : "40000",
-        "n" : 1,
+        "memory" : "40000"
     },
     "recalibrated_writer_gatk_10x" :
     {
         "memory" : "36000",
-        "n" : 8,
+        "n" : 8
     },
     "base_recalibrator_gatk_10x" :
     {
         "memory" : "36000",
-        "n" : 8,
+        "n" : 8
     },
     "picard_mark_dups_10x" :
     {
-        "memory" : "72000",
-        "n" : 1,
+        "memory" : "72000"
     },
     "picard_qc_metrics_10x" :
     {
         "memory" : "8000",
-        "n" : 4,
+        "n" : 4
     },
     "call_variants_gatk_10x_pooled" :
     {
-        "memory" : "80000",
-        "n" : 1,
-    },
-    "call_variants_gatk_10x_barcode" :
-    {
-        "memory" : "20000",
-        "n" : 4,
+        "memory" : "80000"
     },
     "index_barcode_bams_10x" :
     {
-        "memory" : "2000",
-        "n" : 1,
+        "memory" : "2000"
     },
     "align_with_star_2pass_10x" :
     {
-        "memory" : "80000",
-        "n" : 4,
+        "memory" : "80000"
     },
     "identify_donor_collect_10x" :
     {
-        "memory" : "4000",
-        "n" : 1,
+        "memory" : "4000"
     },
     "identify_donor_collect_10x_cardelino" :
     {
-        "memory" : "4000",
-        "n" : 1,
+        "memory" : "4000"
     },
     "identify_donor_runs_10x" :
     {
-        "memory" : "12000",
-        "n" : 1,
+        "memory" : "12000"
     },
     "identify_donor_runs_10x_cardelino" :
     {
-        "memory" : "12000",
-        "n" : 1,
+        "memory" : "12000"
     },
     "index_hipsci_overlap_vcf_10x" :
     {
-        "memory" : "300",
-        "n" : 1,
+        "memory" : "300"
     },
     "filter_hipsci_overlap_variants_10x" :
     {
-        "memory" : "200",
-        "n" : 1,
+        "memory" : "200"
     },
     "singlecell_variant_list_10x" :
     {
-        "memory" : "300",
-        "n" : 1,
+        "memory" : "300"
     },
     "bgzip_vcf_10x" :
     {
-        "memory" : "300",
-        "n" : 1,
+        "memory" : "300"
     },
     "index_bgzip_vcf_10x" :
     {
-        "memory" : "300",
-        "n" : 1,
+        "memory" : "300"
     },
     "filter_variants_gatk_10x" :
     {
-        "memory" : "1800",
-        "n" : 1,
+        "memory" : "1800"
     },
     "call_variants_gatk_pooled" :
     {
-        "memory" : "80000",
-        "n" : 1,
+        "memory" : "80000"
     },
     "call_variants_gatk_10x_barcode" :
     {
-        "memory" : "20000",
-        "n" : 1,
+        "memory" : "20000"
     },
     "picard_read_groups_barcode_10x" :
     {
-        "memory" : "2500",
-        "n" : 1,
+        "memory" : "2500"
     },
     "split_bam_by_barcode_10x" :
     {
-        "memory" : "300",
-        "n" : 1,
+        "memory" : "300"
     },
     "bam2fastq_10x" :
     {
-        "memory" : "500",
-        "n" : 1,
+        "memory" : "500"
     },
     "make_unmapped_bam_10x" :
     {
-        "memory" : "20000",
-        "n" : 1,
+        "memory" : "20000"
     },
     "index_star_bams_10x" :
     {
-        "memory" : "500",
-        "n" : 1,
+        "memory" : "500"
     },
     "picard_sort_qname_10x" :
     {
-        "memory" : "20000",
-        "n" : 1,
+        "memory" : "20000"
     },
     "picard_sort_coord_10x" :
     {
-        "memory" : "24000",
-        "n" : 1,
+        "memory" : "24000"
     },
     "bam_add_chr_prefix_10x" :
     {
-        "memory" : "2000",
-        "n" : 1,
+        "memory" : "2000"
     },
     "call_variants_mpileup_fthicov" :
     {
-        "memory" : "8000",
-        "n" : 1,
-        "queue" : "research"
+        "memory" : "8000"
     }
 }
