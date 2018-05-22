@@ -31,7 +31,7 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 COPY environment.yml /
-RUN conda env create -f /environment.yml && conda clean -a
+RUN conda env create -f /environment.yml python=3.6 && conda clean -a
 ENV PATH /opt/conda/envs/davismcc-nf-hipsci-endo/bin:$PATH
 
 FROM broadinstitute/gatk3
