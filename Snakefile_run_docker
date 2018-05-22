@@ -16,7 +16,6 @@ from subprocess import run
 import subprocess
 import pandas as pd
 import re
-import h5py
 
 shell.prefix("set -euo pipefail;")
 
