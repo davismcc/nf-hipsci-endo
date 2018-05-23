@@ -14,13 +14,10 @@ dependencies:
   - bedops=2.4.30
   - cutadapt=1.15
   - trim-galore=0.4.5
-  - hisat2=2.1.0
-  - rseqc=2.6.4
-  - preseq=2.0.2
   - subread=1.6.0
-  - multiqc=1.5
   - samtools=1.8
-  - emacs=25.2
   - tabix=0.2.5
-  - wget
 
+  # - hisat2=2.1.0
+  # - rseqc=2.6.4
+  # - preseq=2.0.2

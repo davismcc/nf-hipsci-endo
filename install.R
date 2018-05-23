@@ -13,25 +13,17 @@ pkgs <- c(
   "dynamicTreeCut",
   "ggridges",
   "ggthemes",
-  "glmnet",
-  "gdata",
-  "gplots",
   "Matrix",
   "MatrixModels",
   "matrixStats",
-  "microbenchmark",
   "mvoutlier",
-  "packrat",
   "pheatmap",
   "pryr",
   "qvalue",
   "RColorBrewer",
   "reshape2",
-  "roxygen2",
-  "rprojroot",
   "scales",
   "superheat",
-  "VGAM",
   "viridis"
 )
 
@@ -51,7 +43,6 @@ biocLite(pkgs_to_install)
 
 # Single-cell relevant packages
 sc_pkgs <- c(
-  "beachmat",
   "Canopy",
   "destiny",
   "edgeR",
