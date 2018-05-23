@@ -5,7 +5,7 @@ Author: Davis McCarthy
 Affiliation: EMBL-EBI
 
 Run from run directory
-Run: snakemake -s ../../../Snakefile_run_docker --jobs 2000 --latency-wait 30 --cluster-config ../../../cluster.json --cluster 'bsub -J {cluster.name} -q {cluster.queue} -n {cluster.n} -R "rusage[mem={cluster.memory}]" -M {cluster.memory}  -o {cluster.output} -e {cluster.error}'
+Run: snakemake -s ../../../Snakefile_run_docker --jobs 5000 --latency-wait 30 --cluster-config ../../../cluster.json --cluster 'bsub -J {cluster.name} -q {cluster.queue} -n {cluster.n} -R "rusage[mem={cluster.memory}]" -M {cluster.memory}  -o {cluster.output} -e {cluster.error}' --keep-going --rerun-incomplete
 
 Davis McCarthy, 20 November 2017
 """
@@ -127,17 +127,17 @@ rule all:
         #leaf_cutter_junc
 
 
-rule build_star_genome_indexes:
-    input:
-        fasta=fasta_unzipped,
-        annotation=anno_gencode_v19
-    output:
-        star_genome_output
-    threads: 8
-    shell:
-        '{star_cmd} --runMode genomeGenerate --genomeDir {STAR_GENOME_DIR} '
-        '--genomeFastaFiles {input.fasta} --runThreadN {threads} '
-        '--sjdbGTFfile {input.annotation} --sjdbOverhang 100'
+# rule build_star_genome_indexes:
+#     input:
+#         fasta=fasta_unzipped,
+#         annotation=anno_gencode_v19
+#     output:
+#         star_genome_output
+#     threads: 8
+#     shell:
+#         '{star_cmd} --runMode genomeGenerate --genomeDir {STAR_GENOME_DIR} '
+#         '--genomeFastaFiles {input.fasta} --runThreadN {threads} '
+#         '--sjdbGTFfile {input.annotation} --sjdbOverhang 100'
 
 
 rule create_fasta_index:
@@ -518,7 +518,7 @@ rule filter_hipsci_overlap_variants:
     shell:
         """
         set +euo pipefail
-        echo -e "1\\t1\\tA\\tC" > {output}
+        echo -e "1\\t1\\tA\\tC" > {output.lst}
         {bcftools_cmd} view -O v {input.sc_vcf} | grep -v ^# | awk \'{{sub(/chr/,""); print $1"\\t"$2"\\t"$4"\\t"$5}}\' >> {output.lst}
         {bcftools_cmd} view -o {output.tmp} -O z -l 9 -R {output.lst} {input.hipsci_vcf}
         vcf-sort {output.tmp} | bgzip -c > {output.vcf}

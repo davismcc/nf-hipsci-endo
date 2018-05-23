@@ -4,10 +4,8 @@ library(BiocInstaller) # shouldn't be necessary
 
 pkgs <- c(
   "apcluster",
-  "batchtools",
   "bayesplot",
   "bblme",
-  "clustermq",
   "coda",
   "cowplot",
   "d3heatmap",
@@ -17,8 +15,6 @@ pkgs <- c(
   "DT",
   "dynamicTreeCut",
   "e1071",
-  "future",
-  "future.batchtools",
   "flexmix",
   "formatR",
   "fpc",
@@ -36,8 +32,6 @@ pkgs <- c(
   "gdata",
   "gplots",
   "gtools",
-  "greta",
-  "keras",
   "lattice",
   "latticeExtra",
   "lintr",
@@ -57,7 +51,6 @@ pkgs <- c(
   "rprojroot",
   "scales",
   "superheat",
-  "tensorflow",
   "testthat",
   "tufte",
   "UpSetR",
@@ -85,23 +78,17 @@ biocLite(pkgs_to_install)
 sc_pkgs <- c(
   "beachmat",
   "Canopy",
-  "clusterExperiment",
-  "DESeq2",
   "destiny",
   "edgeR",
   "GO.db",
   "goseq",
   "limma",
-  "MAST",
   "MultiAssayExperiment",
   "org.Hs.eg.db",
   "org.Mm.eg.db",
   "pcaMethods",
-  "pheatmap",
   "preprocessCore",
   "rhdf5",
-  "Rsamtools",
-  "Rsubread",
   "Rtsne",
   "scater",
   "scran",
@@ -110,8 +97,7 @@ sc_pkgs <- c(
   "tximport",
   "variancePartition",
   "VariantAnnotation",
-  "vcfR",
-  "zinbwave"
+  "vcfR"
 )
 
 pkgs_to_install <- sc_pkgs[sc_pkgs %in% ap]
