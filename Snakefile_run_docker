@@ -521,7 +521,7 @@ rule filter_hipsci_overlap_variants:
         echo -e "1\\t1\\tA\\tC" > {output.lst}
         {bcftools_cmd} view -O v {input.sc_vcf} | grep -v ^# | awk \'{{sub(/chr/,""); print $1"\\t"$2"\\t"$4"\\t"$5}}\' >> {output.lst}
         {bcftools_cmd} view -o {output.tmp} -O z -l 9 -R {output.lst} {input.hipsci_vcf}
-        vcf-sort {output.tmp} | bgzip -c > {output.vcf}
+        {bcftools_cmd} sort -m 500M -Oz -o {output.tmp} {output.vcf} 
         {bcftools_cmd} index {output.vcf}
         set -euo pipefail
         """
