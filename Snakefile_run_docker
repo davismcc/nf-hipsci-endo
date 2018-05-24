@@ -20,7 +20,7 @@ import re
 shell.prefix("set -euo pipefail;")
 
 ## singularity image with installed software
-singularity: "docker://davismcc/nf-hipsci-endo:latest"
+singularity: "docker://davismcc/nf-hipsci-endo:0.1"
 
 ## reference files
 references_dir = '../../../references/'
