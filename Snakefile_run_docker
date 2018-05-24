@@ -5,7 +5,7 @@ Author: Davis McCarthy
 Affiliation: EMBL-EBI
 
 Run from run directory
-Run: snakemake -s ../../../Snakefile_run_docker --jobs 5000 --latency-wait 30 --cluster-config ../../../cluster.json --cluster 'bsub -J {cluster.name} -q {cluster.queue} -n {cluster.n} -R "rusage[mem={cluster.memory}]" -M {cluster.memory}  -o {cluster.output} -e {cluster.error}' --keep-going --rerun-incomplete
+Run: snakemake -s ../../../Snakefile_run_docker --use-singularity --jobs 5000 --latency-wait 30 --cluster-config ../../../cluster.json --cluster 'bsub -J {cluster.name} -q {cluster.queue} -n {cluster.n} -R "rusage[mem={cluster.memory}]" -M {cluster.memory}  -o {cluster.output} -e {cluster.error}' --keep-going --rerun-incomplete
 
 Davis McCarthy, 20 November 2017
 """
@@ -20,7 +20,7 @@ import re
 shell.prefix("set -euo pipefail;")
 
 ## singularity image with installed software
-sing_cmd = 'singularity exec ../../../endo.img '
+singularity: "docker://davismcc/nf-hipsci-endo:latest"
 
 ## reference files
 references_dir = '../../../references/'
@@ -53,19 +53,34 @@ STAR_GENOME_DIR = os.path.join(references_dir, 'STAR_GRCh37.75_ERCC')
 star_genome_files = ['chrLength.txt', 'chrNameLength.txt', 'chrName.txt', 'chrStart.txt', 'exonInfo.tab', 'Genome', 'genomeParameters.txt', 'SA', 'SAindex', 'sjdbInfo.txt', 'sjdbList.fromGTF.out.tab', 'sjdbList.out.tab', 'transcriptInfo.tab']
 
 ## define commands
-bcftools_cmd = 'singularity exec ../../../endo.img bcftools'
-featurecounts_cmd = 'singularity exec ../../../endo.img featureCounts'
-#gatk_cmd = 'singularity exec ../../../endo.img gatk'
-gatk_cmd = 'singularity exec ../../../gatk.img gatk' # gatk 4
+# bcftools_cmd = 'singularity exec ../../../endo.img bcftools'
+# featurecounts_cmd = 'singularity exec ../../../endo.img featureCounts'
+# #gatk_cmd = 'singularity exec ../../../endo.img gatk'
+# gatk_cmd = 'singularity exec ../../../gatk.img gatk' # gatk 4
+# #leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
+# picard_cmd = 'singularity exec ../../../endo.img picard'
+# python_cmd = 'singularity exec ../../../endo.img python'
+# rscript_cmd = 'singularity exec ../../../endo.img Rscript'
+# salmon_cmd = 'singularity exec ../../../endo.img salmon'
+# samtools_cmd = 'singularity exec ../../../endo.img samtools'
+# star_cmd = 'singularity exec ../../../endo.img STAR'
+# tabix_cmd = 'singularity exec ../../../endo.img tabix'
+# trim_galore_cmd = 'singularity exec ../../../endo.img trim_galore'
+## use global singularity definition
+bcftools_cmd = 'bcftools'
+featurecounts_cmd = 'featureCounts'
+gatk_cmd = 'gatk' # gatk 4
 #leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
-picard_cmd = 'singularity exec ../../../endo.img picard'
-python_cmd = 'singularity exec ../../../endo.img python'
-rscript_cmd = 'singularity exec ../../../endo.img Rscript'
-salmon_cmd = 'singularity exec ../../../endo.img salmon'
-samtools_cmd = 'singularity exec ../../../endo.img samtools'
-star_cmd = 'singularity exec ../../../endo.img STAR'
-tabix_cmd = 'singularity exec ../../../endo.img tabix'
-trim_galore_cmd = 'singularity exec ../../../endo.img trim_galore'
+picard_cmd = 'picard'
+python_cmd = 'python'
+rscript_cmd = 'Rscript'
+salmon_cmd = 'salmon'
+samtools_cmd = 'samtools'
+star_cmd = 'STAR'
+tabix_cmd = 'tabix'
+trim_galore_cmd = 'trim_galore'
+
+
 ## scripts
 read_salmon_to_scesets_cmd = '../../../src/preprocessing/read_salmon_to_scesets.R'
 
@@ -456,6 +471,8 @@ rule split_n_trim_gatk:
         bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.dedup.bam'
     output:
         temp('star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.bam')
+    singularity:
+        'docker://broadinstitute/gatk'
     shell:
         '{gatk_cmd} SplitNCigarReads -R {input.fasta} -I {input.bam} -O {output}'
 
