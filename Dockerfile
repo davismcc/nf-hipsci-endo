@@ -9,8 +9,8 @@ ENV PATH /opt/conda/envs/davismcc-nf-hipsci-endo/bin:$PATH
 
 FROM broadinstitute/gatk
 
-FROM rocker/verse
-FROM bioconductor/release_core2
-RUN mkdir -p /usr/local/lib/R/site-library
-ADD install.R /tmp/
-RUN R -f /tmp/install.R
+# FROM rocker/verse
+# FROM bioconductor/release_core2
+# RUN mkdir -p /usr/local/lib/R/site-library
+# ADD install.R /tmp/
+# RUN R -f /tmp/install.R
