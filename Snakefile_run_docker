@@ -472,7 +472,7 @@ rule split_n_trim_gatk:
     output:
         temp('star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.bam')
     singularity:
-        'docker://broadinstitute/gatk'
+        'docker://broadinstitute/gatk:4.0.4.0'
     shell:
         '{gatk_cmd} SplitNCigarReads -R {input.fasta} -I {input.bam} -O {output}'
 
