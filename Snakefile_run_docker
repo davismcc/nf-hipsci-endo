@@ -54,33 +54,33 @@ STAR_GENOME_DIR = os.path.join(references_dir, 'STAR_GRCh37.75_ERCC')
 star_genome_files = ['chrLength.txt', 'chrNameLength.txt', 'chrName.txt', 'chrStart.txt', 'exonInfo.tab', 'Genome', 'genomeParameters.txt', 'SA', 'SAindex', 'sjdbInfo.txt', 'sjdbList.fromGTF.out.tab', 'sjdbList.out.tab', 'transcriptInfo.tab']
 
 ## define commands
-# bcftools_cmd = 'singularity exec ../../../endo.img bcftools'
-# featurecounts_cmd = 'singularity exec ../../../endo.img featureCounts'
-# #gatk_cmd = 'singularity exec ../../../endo.img gatk'
-# gatk_cmd = 'singularity exec ../../../gatk.img gatk' # gatk 4
-# #leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
-# picard_cmd = 'singularity exec ../../../endo.img picard'
-# python_cmd = 'singularity exec ../../../endo.img python'
-# rscript_cmd = 'singularity exec ../../../endo.img Rscript'
-# salmon_cmd = 'singularity exec ../../../endo.img salmon'
-# samtools_cmd = 'singularity exec ../../../endo.img samtools'
-# star_cmd = 'singularity exec ../../../endo.img STAR'
-# tabix_cmd = 'singularity exec ../../../endo.img tabix'
-# trim_galore_cmd = 'singularity exec ../../../endo.img trim_galore'
-## use global singularity definition
-bcftools_cmd = 'bcftools'
-featurecounts_cmd = 'featureCounts'
-gatk_cmd = 'gatk' # gatk 4
+bcftools_cmd = 'singularity exec ../../../endo-0.1.simg bcftools'
+featurecounts_cmd = 'singularity exec ../../../endo-0.1.simg featureCounts'
+#gatk_cmd = 'singularity exec ../../../endo-0.1.simg gatk'
+gatk_cmd = 'singularity exec ../../../gatk.img gatk' # gatk 4
 #leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
-picard_cmd = 'picard'
-python_cmd = 'python'
-rscript_cmd = 'Rscript'
-salmon_cmd = 'salmon'
-samtools_cmd = 'samtools'
-star_cmd = 'STAR'
-tabix_cmd = 'tabix'
-trim_galore_cmd = 'trim_galore'
-rscript_cmd = 'Rscript'
+picard_cmd = 'singularity exec ../../../endo-0.1.simg picard'
+python_cmd = 'singularity exec ../../../endo-0.1.simg python'
+rscript_cmd = 'singularity exec ../../../r-singlecell-0.1.simg Rscript'
+salmon_cmd = 'singularity exec ../../../endo-0.1.simg salmon'
+samtools_cmd = 'singularity exec ../../../endo-0.1.simg samtools'
+star_cmd = 'singularity exec ../../../endo-0.1.simg STAR'
+tabix_cmd = 'singularity exec ../../../endo-0.1.simg tabix'
+trim_galore_cmd = 'singularity exec ../../../endo-0.1.simg trim_galore'
+## use global singularity definition
+# bcftools_cmd = 'bcftools'
+# featurecounts_cmd = 'featureCounts'
+# gatk_cmd = 'gatk' # gatk 4
+# #leafcutter_cmd = 'sh /hps/nobackup/stegle/users/mjbonder/tools/leafcutter/scripts/bam2junc.sh'
+# picard_cmd = 'picard'
+# python_cmd = 'python'
+# rscript_cmd = 'Rscript'
+# salmon_cmd = 'salmon'
+# samtools_cmd = 'samtools'
+# star_cmd = 'STAR'
+# tabix_cmd = 'tabix'
+# trim_galore_cmd = 'trim_galore'
+# rscript_cmd = 'Rscript'
 
 ## scripts
 read_salmon_to_scesets_cmd = '../../../src/preprocessing/read_salmon_to_scesets.R'
