@@ -20,7 +20,8 @@ import re
 shell.prefix("set -euo pipefail;")
 
 ## singularity image with installed software
-singularity: "docker://davismcc/nf-hipsci-endo:0.1"
+#singularity: "docker://davismcc/nf-hipsci-endo:0.1"
+singularity: "../../../endo-0.1.simg"
 
 ## reference files
 references_dir = '../../../references/'
@@ -471,8 +472,10 @@ rule split_n_trim_gatk:
         bam='star/{sample}/{sample}.2pass.Aligned.sortedByCoord.dedup.bam'
     output:
         temp('star/{sample}/{sample}.2pass.Aligned.sortedByCoord.split.bam')
+    # singularity:
+    #     'docker://broadinstitute/gatk:4.0.4.0'
     singularity:
-        'docker://broadinstitute/gatk:4.0.4.0'
+        '../../../gatk.img'
     shell:
         '{gatk_cmd} SplitNCigarReads -R {input.fasta} -I {input.bam} -O {output}'
 
@@ -553,8 +556,10 @@ rule identify_donor_runs:
         'donor_id/{sample}.donor_id.csv'
     params:
         prefix='donor_id/{sample}.donor_id'
+    # singularity:
+    #     'docker://davismcc/r-singlecell-img:0.1'
     singularity:
-        'docker://davismcc/r-singlecell-img:0.1'
+        '../../../r-singlecell-0.1.simg'
     shell:
         '{rscript_cmd} ../../../src/R/identify_donor_small_vcf_cardelino.R '
         '--input_file "{input.sc_vcf}" '
@@ -607,8 +612,10 @@ rule salmon_to_sceset_GRCh37:
     params:
         input_dir='quant_salmon',
         output_prefix='sces/sce.salmon.GRCh37.preqc'
+    # singularity:
+    #     'docker://davismcc/r-singlecell-img:0.1'
     singularity:
-        'docker://davismcc/r-singlecell-img:0.1'
+        '../../../r-singlecell-0.1.simg'
     shell:
         '{rscript_cmd} {read_salmon_to_scesets_cmd} '
         '--input_dir {params.input_dir} '
@@ -626,8 +633,10 @@ rule salmon_to_sceset_GRCh38:
     params:
         input_dir='quant_salmon_GRCh38',
         output_prefix='sces/sce.salmon.GRCh38.preqc'
+    # singularity:
+    #     'docker://davismcc/r-singlecell-img:0.1'
     singularity:
-        'docker://davismcc/r-singlecell-img:0.1'
+        '../../../r-singlecell-0.1.simg'
     shell:
         '{rscript_cmd} {read_salmon_to_scesets_cmd} '
         '--input_dir {params.input_dir} '
@@ -640,8 +649,10 @@ rule rough_qc:
         'sces/sce.salmon.{genome}.preqc_gene.rds'
     output:
         'first_qc/salmon.{genome}.first_qc.html'
+    # singularity:
+    #     'docker://davismcc/r-singlecell-img:0.1'
     singularity:
-        'docker://davismcc/r-singlecell-img:0.1'
+        '../../../r-singlecell-0.1.simg'
     shell:
         '{rscript_cmd} ../../../src/R/compile_report.R '
         '-i {input} -o {output} '
