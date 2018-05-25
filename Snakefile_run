@@ -602,33 +602,7 @@ rule call_variants_mpileup_fthicov:
 #         # '{gatk_cmd} -T VariantFiltration -R {input.fasta} -V {input.vcf} '
 #         # '-window 35 -cluster 3 -filterName FS -filter "FS > 30.0" '
 #         # '-filterName QD -filter "QD < 2.0" -o {output}'
-        
 
-# rule bgzip_vcf:
-#     input:
-#         'vcf/{sample}/{name}.filtered.vcf'
-#     output:
-#         f1='vcf/{sample}/{name}.filtered.vcf.gz',
-#         f2='vcf/{sample}/{name}.filtered.vcf.gz.csi'
-#     shell:
-#         """
-#         vcf-sort {input} | bgzip -c > {output.f1}
-#         bcftools index {output.f1}
-#         """
-
-
-# rule singlecell_variant_list:
-#     input:
-#         'vcf/{sample}/{sample}.filtered.vcf.gz'
-#     output:
-#         temp('vcf/{sample}/{sample}.variant_list.txt')
-#     shell:
-#         """
-#         set +euo pipefail
-#         echo -e "1\\t1\\tA\\tC" > {output}
-#         bcftools view -O v {input} | grep -v ^# | awk \'{{sub(/chr/,""); print $1"\\t"$2"\\t"$4"\\t"$5}}\' >> {output}
-#         set -euo pipefail
-#         """
 
 
 rule filter_hipsci_overlap_variants:
