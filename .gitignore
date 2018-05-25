@@ -15,3 +15,5 @@ tests/test_data
 auto-save-list
 tramp
 .\#*
+.Rproj.user
+davismcc-nf-hipsci-endo.Rproj
