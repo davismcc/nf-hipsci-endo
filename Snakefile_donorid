@@ -31,6 +31,13 @@ rule all:
     input: donorid_csvs
 
 
+rule build_singularity_img:
+    output:
+        'rsc.img'
+    shell:
+        'singularity build rsc.img docker://davismcc/r-singlecell-img:0.1'
+
+
 rule index_cells_vcf:
     input:
         sc_vcf='data_raw/scrnaseq/{run}/cells_merged.vcf.gz'
