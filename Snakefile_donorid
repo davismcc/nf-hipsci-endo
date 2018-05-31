@@ -1,0 +1,84 @@
+"""
+Snakefile for cardelino donor ID for the single-cell endoderm project 
+
+Author: Davis McCarthy
+Affiliation: EMBL-EBI
+
+Run from run directory
+Run: snakemake -s Snakefile_donorid --jobs 2000 --latency-wait 30 --cluster-config ../../../cluster.json --cluster 'bsub -J {cluster.name} -q {cluster.queue} -n {cluster.n} -R "rusage[mem={cluster.memory}]" -M {cluster.memory}  -o {cluster.output} -e {cluster.error}'
+
+Davis McCarthy, 31 May 2018
+"""
+
+import glob
+import os
+from subprocess import run
+import subprocess
+import pandas as pd
+import re
+
+HIPSCI_VCF = '/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.allchr.vcf.gz'
+## read in input dirs and cell VCF files
+run_dirs = glob.glob('data_raw/scrnaseq/run*')
+vcfs = glob.glob('data_raw/scrnaseq/run*/cells_merged.vcf.gz')
+## define output files
+donorid_csvs = []
+for run in run_dirs:
+    donorid_csvs.append('{}/donor_id_all_cardelino.csv'.format(donor))
+
+rule all:
+    input: donorid_csvs
+
+
+rule index_cells_vcf:
+    input:
+        sc_vcf='data_raw/scrnaseq/{run}/cells_merged.vcf.gz'
+    output:
+        csi=sc_vcf_idx='data_raw/scrnaseq/{run}/cells_merged.vcf.gz.csi'
+    shell:
+        """
+        set +euo pipefail
+        bcftools index {input.sc_vcf}
+        set -euo pipefail
+        """
+
+
+rule filter_hipsci_overlap_variants:
+    input:
+        sc_vcf='data_raw/scrnaseq/{run}/cells_merged.vcf.gz',
+        sc_vcf_idx='data_raw/scrnaseq/{run}/cells_merged.vcf.gz.csi',
+        hipsci_vcf=HIPSCI_VCF
+    output:
+        lst=temp('data_raw/scrnaseq/{run}/variant_list.txt'),
+        tmp=temp('data_raw/scrnaseq/{run}/tmp.vcf.gz'),
+        vcf=temp('data_raw/scrnaseq/{run}/filtered.hipsci.overlap.vcf.gz'),
+        csi=temp('data_raw/scrnaseq/{run}/filtered.hipsci.overlap.vcf.gz.csi')
+    shell:
+        """
+        set +euo pipefail
+        echo -e "1\\t1\\tA\\tC" > {output.lst}
+        bcftools view -O v {input.sc_vcf} | grep -v ^# | awk \'{{sub(/chr/,""); print $1"\\t"$2"\\t"$4"\\t"$5}}\' >> {output.lst}
+        bcftools view -o {output.tmp} -O z -l 9 -R {output.lst} {input.hipsci_vcf}
+        vcf-sort {output.tmp} | bgzip -c > {output.vcf}
+        bcftools index {output.vcf}
+        set -euo pipefail
+        """
+
+
+rule identify_donor_runs:
+    input:
+        sc_vcf='data_raw/scrnaseq/{run}/cells_merged.vcf.gz',
+        hipsci_vcf='data_raw/scrnaseq/{run}/filtered.hipsci.overlap.vcf.gz',
+        hipsci_vcf_idx='data_raw/scrnaseq/{run}/filtered.hipsci.overlap.vcf.gz.csi'
+    output:
+        'data_raw/scrnaseq/{run}/donor_id_all_cardelino.csv'
+    params:
+        prefix='data_raw/scrnaseq/{run}/donor_id_all_cardelino'
+    shell:
+        '{Rscript_cmd} ../../../src/R/identify_donor_cardelino_multicell.R '
+        '--input_file "{input.sc_vcf}" '
+        '--donor_lines "vass;wuye;wetu" '
+        '--donor_vcf {input.hipsci_vcf} '
+        '--output_prefix "{params.prefix}" '
+
+
