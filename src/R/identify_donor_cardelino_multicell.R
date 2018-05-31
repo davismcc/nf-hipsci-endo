@@ -122,16 +122,6 @@ get_snp_matrices <- function(vcf_sample, vcf_donor) {
 
 
 main <- function(input_vcf, output_prefix, donor_vcf) {
-    ## define samples in donor VCF
-    hdr_donor <- scanVcfHeader(donor_vcf)
-    donors <- samples(hdr_donor)[grep("HPS.*pf-[a-z]+$", samples(hdr_donor))]
-    donors <- gsub("HPS.*-", "", gsub("_[0-9]+", "", donors))
-    ## define donors and names
-    short_names <- donors
-    these_donors <- gsub("HPS.*-", "", gsub("_[0-9]+", "", strsplit(donor_lines, ";")[[1]]))
-    these_donors_idx <- grepl(gsub(";", "|", donor_lines), donors)
-    probs <- rep(0, length(donors))
-    names(probs) <- donors
     ## Read in VCF from this sample
     vcf_sample <- read_sample_vcf(input_vcf)
     if (length(vcf_sample) < 1) {
@@ -140,7 +130,6 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
         message("No variants in sample VCF after filtering.\n")
         return("Done.")
     }
-    output_df$nvars_called <- length(vcf_sample)
     message("...read ", length(vcf_sample), " variants from sample VCF\n")
     ## Read in Donor VCF
     donor_data <- read_donor_vcf(donor_vcf)
@@ -168,7 +157,7 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
         A = snpmat_list$A, D = snpmat_list$D, C = snpmat_list$C,
         Psi = rep(1 / ncol(snpmat_list$C), ncol(snpmat_list$C)),
         model = "Binomial")
-    probs <- as.vector(assign$prob)
+    probs <- assign$prob
     output_df <- data.frame(
         sample_id = colnames(input_vcf),
         best_donor = NA,
@@ -189,8 +178,8 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
     }
     ## write output to file
     message("Writing output to CSV\n")
-    write.csv(output_df, file = paste0(output_prefix, ".csv"),
-              row.names = FALSE)
+    write.csv(output_df, file = paste0(output_prefix, ".csv"), 
+                row.names = FALSE)
     return("Done.")
 }
 
