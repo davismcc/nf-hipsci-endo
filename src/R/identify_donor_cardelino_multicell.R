@@ -135,15 +135,13 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
     donor_data <- read_donor_vcf(donor_vcf)
     isSNV_idx <- donor_data$isSNV_idx
     vcf_donor <- donor_data$vcf
-    message("...read ", length(vcf_donor), " variants from sample VCF\n")
+    message("...read ", length(vcf_donor), " variants from donor VCF\n")
     if (!any(isSNV_idx)) {
         write.csv(output_df, file = paste0(output_prefix, ".csv"),
                   row.names = FALSE)
         message("No single-nucleotide variants overlapping in sample VCF and Donor VCF\n")
         return("Done.")
     }
-    if (!identical(colnames(vcf_donor), short_names))
-        stop("Sample names in donor VCF do not match those read from header.")
     vcf_donor <- vcf_donor[isSNV_idx]
     ## get snp matrices
     snpmat_list <- get_snp_matrices(vcf_sample, vcf_donor)
