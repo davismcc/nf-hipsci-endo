@@ -216,8 +216,8 @@ main(opt$input_file, opt$output_prefix, opt$donor_lines, opt$donor_vcf)
 
 ## # params for testing
 ## opt <-  list()
-##  opt[["input_file"]] <- "data_raw/scrnaseq/run_25757/cells_merged.vcf.gz"
-## opt[["output_prefix"]] <- "data_raw/scrnaseq/run_25757/donor_id/tmp.donor_id"
-## opt[["donor_vcf"]] <- "data_raw/scrnaseq/run_21999/vcf/21999_1#56.filtered.hipsci.overlap.vcf.gz"
-## opt[["donor_lines"]] <- "fasu_2;kegd_2;zerv_8;zoio_2;xojn_3;fuai_1;eevy_7;oaqd_3;paab_4;sita_1;toss_3;zoio_2;heth_1;jogf_2;pelm_3;vass_1;wibj_2;zapk_3"
+## opt[["input_file"]] <- "data_raw/scrnaseq/run_24252/cells_merged_filt.vcf.gz"
+## opt[["output_prefix"]] <- "data_raw/scrnaseq/run_24252/tmp.donor_id_cardelino_all"
+## opt[["donor_vcf"]] <- "data_raw/scrnaseq/run_24252/filtered.hipsci.overlap.vcf.gz"
+## opt[["donor_lines"]] <- "aowh_2;keui_1;meue_4;naah_2;poih_4;vils_1;bokz_5;datg_2;guss_1;nudd_1;sehl_6"
 

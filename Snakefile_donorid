@@ -5,7 +5,7 @@ Author: Davis McCarthy
 Affiliation: EMBL-EBI
 
 Run from run directory
-Run: snakemake -s Snakefile_donorid --jobs 2000 --latency-wait 30 --cluster-config ../../../cluster.json --cluster 'bsub -J {cluster.name} -q {cluster.queue} -n {cluster.n} -R "rusage[mem={cluster.memory}]" -M {cluster.memory}  -o {cluster.output} -e {cluster.error}'
+Run: snakemake -s Snakefile_donorid --jobs 2000 --latency-wait 30 --cluster-config cluster.json --cluster 'bsub -J {cluster.name} -q {cluster.queue} -n {cluster.n} -R "rusage[mem={cluster.memory}]" -M {cluster.memory}  -o {cluster.output} -e {cluster.error}'
 
 Davis McCarthy, 31 May 2018
 """
@@ -51,10 +51,26 @@ rule index_cells_vcf:
         """
 
 
-rule filter_hipsci_overlap_variants:
+rule filter_cells_vcf:
     input:
         sc_vcf='data_raw/scrnaseq/{run}/cells_merged.vcf.gz',
-        sc_vcf_idx='data_raw/scrnaseq/{run}/cells_merged.vcf.gz.csi',
+        sc_idx='data_raw/scrnaseq/{run}/cells_merged.vcf.gz.csi'
+    output:
+        vcf='data_raw/scrnaseq/{run}/cells_merged_filt.vcf.gz',
+        idx='data_raw/scrnaseq/{run}/cells_merged_filt.vcf.gz.csi'
+    shell:
+        """
+        set +euo pipefail
+        bcftools filter -Oz -i'DP>50 && QUAL>20' -o {output.vcf} {input.sc_vcf}
+        bcftools index {output.vcf}
+        set -euo pipefail
+        """
+
+
+rule filter_hipsci_overlap_variants:
+    input:
+        sc_vcf='data_raw/scrnaseq/{run}/cells_merged_filt.vcf.gz',
+        sc_vcf_idx='data_raw/scrnaseq/{run}/cells_merged_filt.vcf.gz.csi',
         hipsci_vcf=HIPSCI_VCF
     output:
         lst=temp('data_raw/scrnaseq/{run}/variant_list.txt'),
@@ -73,9 +89,10 @@ rule filter_hipsci_overlap_variants:
         """
 
 
-rule identify_donor_runs:
+rule identify_donor_multicell:
     input:
-        sc_vcf='data_raw/scrnaseq/{run}/cells_merged.vcf.gz',
+        sc_vcf='data_raw/scrnaseq/{run}/cells_merged_filt.vcf.gz',
+        sc_idx='data_raw/scrnaseq/{run}/cells_merged_filt.vcf.gz.csi',
         hipsci_vcf='data_raw/scrnaseq/{run}/filtered.hipsci.overlap.vcf.gz',
         hipsci_vcf_idx='data_raw/scrnaseq/{run}/filtered.hipsci.overlap.vcf.gz.csi'
     output:
