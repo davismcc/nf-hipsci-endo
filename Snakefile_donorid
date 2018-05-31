@@ -100,7 +100,7 @@ rule identify_donor_multicell:
     params:
         prefix='data_raw/scrnaseq/{run}/donor_id_all_cardelino'
     shell:
-        '{Rscript_cmd} ../../../src/R/identify_donor_cardelino_multicell.R '
+        '{Rscript_cmd} src/R/identify_donor_cardelino_multicell.R '
         '--input_file "{input.sc_vcf}" '
         '--donor_vcf {input.hipsci_vcf} '
         '--output_prefix "{params.prefix}" '
