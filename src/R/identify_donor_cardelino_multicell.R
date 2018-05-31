@@ -121,7 +121,7 @@ get_snp_matrices <- function(vcf_sample, vcf_donor) {
 }
 
 
-main <- function(input_vcf, output_prefix, donor_lines, donor_vcf, fasta_idx) {
+main <- function(input_vcf, output_prefix, donor_vcf) {
     ## define samples in donor VCF
     hdr_donor <- scanVcfHeader(donor_vcf)
     donors <- samples(hdr_donor)[grep("HPS.*pf-[a-z]+$", samples(hdr_donor))]
