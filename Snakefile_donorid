@@ -25,7 +25,7 @@ vcfs = glob.glob('data_raw/scrnaseq/run*/cells_merged.vcf.gz')
 ## define output files
 donorid_csvs = []
 for run in run_dirs:
-    donorid_csvs.append('{}/donor_id_all_cardelino.csv'.format(donor))
+    donorid_csvs.append('{}/donor_id_all_cardelino.csv'.format(run))
 
 rule all:
     input: donorid_csvs
