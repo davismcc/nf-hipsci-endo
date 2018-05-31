@@ -20,7 +20,7 @@ import re
 HIPSCI_VCF = '/hps/nobackup/hipsci/scratch/genotypes/imputed/2017-03-27/Full/hipsci.wec.gtarray.HumanCoreExome.imputed_phased.20170327.genotypes.allchr.vcf.gz'
 Rscript_cmd = 'singularity exec rsc.img Rscript'
 ## read in input dirs and cell VCF files
-run_dirs = glob.glob('data_raw/scrnaseq/run*')
+run_dirs = glob.glob('data_raw/scrnaseq/run_2*')
 vcfs = glob.glob('data_raw/scrnaseq/run*/cells_merged.vcf.gz')
 ## define output files
 donorid_csvs = []
