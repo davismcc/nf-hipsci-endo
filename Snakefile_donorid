@@ -102,7 +102,6 @@ rule identify_donor_multicell:
     shell:
         '{Rscript_cmd} ../../../src/R/identify_donor_cardelino_multicell.R '
         '--input_file "{input.sc_vcf}" '
-        '--donor_lines "vass;wuye;wetu" '
         '--donor_vcf {input.hipsci_vcf} '
         '--output_prefix "{params.prefix}" '
 

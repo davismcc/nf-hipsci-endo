@@ -2,12 +2,11 @@
 Identify donor multiple cells from a filtered VCF file
 
 Usage:
-identify_donor_small_vcf_cardelino.R --input_file <DATA_IN> --output_prefix <PRFX_OUT> --donor_lines <DONORS> [--donor_vcf <DONOR_VCF> -hv]
+identify_donor_small_vcf_cardelino.R --input_file <DATA_IN> --output_prefix <PRFX_OUT> [--donor_vcf <DONOR_VCF> -hv]
 
 Options:
 -i --input_file <DATA_IN>      input file
 -o --output_prefix <PRFX_OUT>  prefix for output files; .RData, .feather and .csv files produced
--l --donor_lines <DONORS>      string providing donor line IDs separated by ';' (e.g. 'babk_2;wuye_2;podx3')
 -d --donor_vcf <DONOR_VCF>     VCF file containing the genotype data for all donors [default: /nfs/research2/stegle/projects/hipsci/data/genotypes/imputed/REL-2014-11_SS/hipsci.wec.gtarray.HumanCoreExome-12_v1_0.REL-2014-11.imputed_phased.20151005.genotypes.gdid.mac1.recode.WGS.maf0.1.vcf.gz]
 -h --help                      show this
 -v --version                   print version and stop
@@ -30,36 +29,6 @@ suppressPackageStartupMessages(library(VariantAnnotation))
 suppressPackageStartupMessages(library(snpStats))
 suppressPackageStartupMessages(library(cardelino))
 
-
-init_output_df <- function(input_vcf, probs, these_donors, short_names) {
-    ## define output data frame
-    output_df <- data.frame(
-        sample_id = gsub(".filtered.*", "", basename(input_vcf)),
-        donor = as.character(names(probs)),
-        nvars_called = 0,
-        nvars_ovlap_hipsci = 0,
-        nvars_used = 0,
-        best_donor = NA,
-        post_prob = probs,
-        used_in_expt = (short_names %in% these_donors),
-        stringsAsFactors = FALSE)
-    output_df
-}
-
-full_output_df <- function(input_vcf, vcf_sample, vcf_hipsci, sm_sample,
-                           probs, these_donors, short_names) {
-    ## define output data frame
-    output_df <- data.frame(
-        sample_id = gsub(".filtered.*", "", basename(input_vcf)),
-        donor = as.character(names(probs)),
-        nvars_called = length(vcf_sample),
-        nvars_ovlap_hipsci = length(vcf_hipsci),
-        nvars_used = ncol(sm_sample$genotypes),
-        post_prob = probs,
-        used_in_expt = (short_names %in% these_donors), 
-        stringsAsFactors = FALSE)
-    output_df
-}
 
 read_sample_vcf <- function(input_vcf) {
     ## Read in VCF from this sample
@@ -93,7 +62,6 @@ get_snp_matrices <- function(vcf_sample, vcf_donor) {
     sm_donor <- genotypeToSnpMatrix(
         geno(vcf_donor, "GT"), ref = ref(vcf_donor), alt = alt(vcf_donor))
     ## filter sample VCF to those variants found in donor VCF
-    message("Filtering sample VCF\n")
     vcf_sample <- sortSeqlevels(vcf_sample, X.is.sexchrom = TRUE)
     slengths_sample <- seqlengths(vcf_sample)
     vcf_donor <- sortSeqlevels(vcf_donor, X.is.sexchrom = TRUE)
@@ -103,7 +71,9 @@ get_snp_matrices <- function(vcf_sample, vcf_donor) {
         message("No common variants overlapping in sample VCF and Donor VCF\n")
         return(list(stop_program = TRUE))
     } else {
+        message("Filtering sample VCF\n")
         vcf_sample2 <- vcf_sample[queryHits(ovlap)]
+        message("Filtering donor VCF\n")
         vcf_donor <- vcf_donor[subjectHits(ovlap)]
         match_alleles <- unlist(ref(vcf_sample2) == ref(vcf_donor) & alt(vcf_sample2) == alt(vcf_donor))
         if (sum(match_alleles) < 1L)
@@ -112,17 +82,28 @@ get_snp_matrices <- function(vcf_sample, vcf_donor) {
             vcf_sample2 <- vcf_sample2[match_alleles]
             vcf_donor <- vcf_donor[match_alleles]
         }
+        message("Extracting sample SNP matrix\n")
         sm_sample <- genotypeToSnpMatrix(
                 geno(vcf_sample2, "GT"), ref = ref(vcf_sample2),
                 alt = alt(vcf_sample2))
-        sm_sample_REF <- matrix(sapply(geno(vcf_sample2, "AD"), function(x) x[[1]]), ncol = 1)
-        sm_sample_ALT <- matrix(sapply(geno(vcf_sample2, "AD"), function(x) x[[2]]), ncol = 1)
-        sm_sample_DEP <- matrix(sm_sample_REF + sm_sample_ALT, ncol = 1)
+        sm_sample_REF <- matrix(sapply(geno(vcf_sample2, "AD"), 
+                            function(x) x[[1]]), ncol = ncol(vcf_sample2))
+        sm_sample_ALT <- matrix(sapply(geno(vcf_sample2, "AD"), 
+                            function(x) x[[2]]), ncol = ncol(vcf_sample2))
+        sm_sample_DEP <- sm_sample_REF + sm_sample_ALT
+        sm_sample_DEP[sm_sample_DEP == 0] <- NA
+        sm_sample_REF[is.na(sm_sample_DEP)] <- NA
+        sm_sample_ALT[is.na(sm_sample_DEP)] <- NA
+        rownames(sm_sample_REF) <- rownames(sm_sample_ALT) <- 
+            rownames(sm_sample_DEP) <- rownames(vcf_sample2)
+        colnames(sm_sample_REF) <- colnames(sm_sample_ALT) <- 
+            colnames(sm_sample_DEP) <- colnames(vcf_sample2)
         na_sample <- is.na(sm_sample_DEP)
         if (sum(!na_sample) < 1L) {
             message("No common variants with non-missing genotypes overlapping in sample VCF and Donor VCF\n")
             return(list(stop_program = TRUE))
         } else {
+            message("Extracting donor SNP matrix\n")
             sm_donor <- genotypeToSnpMatrix(
                 geno(vcf_donor, "GT"), ref = ref(vcf_donor),
                 alt = alt(vcf_donor))
@@ -132,9 +113,9 @@ get_snp_matrices <- function(vcf_sample, vcf_donor) {
             donor_geno_mat <- t(donor_geno_mat[order(rownames(donor_geno_mat)),])
             message("Doing donor assignment using ", length(vcf_sample2),
                     " variants\n")
-            return(list(sm_sample_REF = sm_sample_REF, A = sm_sample_ALT, D = sm_sample_DEP, 
-                        sm_sample = sm_sample, stop_program = FALSE,
-                       C = donor_geno_mat))
+            return(list(sm_sample_REF = sm_sample_REF, A = sm_sample_ALT, 
+                    D = sm_sample_DEP, sm_sample = sm_sample, 
+                    stop_program = FALSE, C = donor_geno_mat))
         }
     }
 }
@@ -151,8 +132,6 @@ main <- function(input_vcf, output_prefix, donor_lines, donor_vcf, fasta_idx) {
     these_donors_idx <- grepl(gsub(";", "|", donor_lines), donors)
     probs <- rep(0, length(donors))
     names(probs) <- donors
-    ## define output data frame
-    output_df <- init_output_df(input_vcf, probs, these_donors, short_names)
     ## Read in VCF from this sample
     vcf_sample <- read_sample_vcf(input_vcf)
     if (length(vcf_sample) < 1) {
@@ -185,16 +164,29 @@ main <- function(input_vcf, output_prefix, donor_lines, donor_vcf, fasta_idx) {
         message("No common variants overlapping in sample VCF and Donor VCF\n")
         return("Done.")
     }
-    assign <- cell_assign_Gibbs(
+    assign <- cell_assign_EM(
         A = snpmat_list$A, D = snpmat_list$D, C = snpmat_list$C,
         Psi = rep(1 / ncol(snpmat_list$C), ncol(snpmat_list$C)),
         model = "Binomial")
     probs <- as.vector(assign$prob)
-    names(probs) <- colnames(assign$prob)
-    output_df <- full_output_df(input_vcf, vcf_sample, vcf_donor, snpmat_list$sm_sample,
-                                probs, these_donors, short_names)
-    output_df[["n_total_reads"]] <- sum(snpmat_list$D, na.rm = TRUE)
-    output_df[["n_alt_reads"]] <- sum(snpmat_list$A, na.rm = TRUE)
+    output_df <- data.frame(
+        sample_id = colnames(input_vcf),
+        best_donor = NA,
+        best_post_prob = NA,
+        second_best_donor = NA,
+        second_best_post_prob = NA,
+        nvars_used = colSums(snpmat_list$D > 0.5, na.rm = TRUE),
+        n_total_reads = colSums(snpmat_list$D, na.rm = TRUE),
+        n_alt_reads = colSums(snpmat_list$A, na.rm = TRUE),
+        stringsAsFactors = FALSE)
+    donors <- colnames(probs)
+    for (i in seq_len(nrow(probs))) {
+        o <- order(probs[i,], decreasing = TRUE)
+        output_df[["best_donor"]][i] <- donors[o[1]]
+        output_df[["best_post_prob"]][i] <- probs[i, o[1]]
+        output_df[["second_best_donor"]][i] <- donors[o[2]]
+        output_df[["second_best_post_prob"]][i] <- probs[i, o[2]]
+    }
     ## write output to file
     message("Writing output to CSV\n")
     write.csv(output_df, file = paste0(output_prefix, ".csv"),
@@ -209,10 +201,9 @@ message("working directory: ", getwd(), "\n")
 message("input vcf: ", opt$input_file, "\n")
 message("output prefix: ", opt$output_prefix, "\n")
 message("donor vcf: ", opt$donor_vcf, "\n")
-message("lines used: ", opt$donor_lines, "\n")
 
 ## Run main function
-main(opt$input_file, opt$output_prefix, opt$donor_lines, opt$donor_vcf)
+main(opt$input_file, opt$output_prefix, opt$donor_vcf)
 
 ## # params for testing
 ## opt <-  list()

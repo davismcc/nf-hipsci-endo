@@ -28,6 +28,10 @@
     {
         "memory" : "14000"
     },
+    "identify_donor_multicell" :
+    {
+        "memory" : "24000"
+    },
     "identify_donor_collect" :
     {
         "memory" : "4000"
@@ -133,6 +137,10 @@
     "singlecell_variant_list" :
     {
         "memory" : "4000"
+    },
+    "filter_cells_vcf" :
+    {
+        "memory" : "2000"
     },
     "filter_hipsci_overlap_variants" :
     {
