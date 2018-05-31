@@ -42,7 +42,7 @@ rule index_cells_vcf:
     input:
         sc_vcf='data_raw/scrnaseq/{run}/cells_merged.vcf.gz'
     output:
-        csi=sc_vcf_idx='data_raw/scrnaseq/{run}/cells_merged.vcf.gz.csi'
+        'data_raw/scrnaseq/{run}/cells_merged.vcf.gz.csi'
     shell:
         """
         set +euo pipefail
