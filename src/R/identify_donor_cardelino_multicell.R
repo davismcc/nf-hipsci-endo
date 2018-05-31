@@ -157,7 +157,7 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
         model = "Binomial")
     probs <- assign$prob
     output_df <- data.frame(
-        sample_id = colnames(input_vcf),
+        sample_id = colnames(snpmat_list$D),
         best_donor = NA,
         best_post_prob = NA,
         second_best_donor = NA,
