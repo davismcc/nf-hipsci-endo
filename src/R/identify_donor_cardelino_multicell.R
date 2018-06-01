@@ -135,6 +135,7 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
     donor_data <- read_donor_vcf(donor_vcf)
     isSNV_idx <- donor_data$isSNV_idx
     vcf_donor <- donor_data$vcf
+    rm(donor_data)
     message("...read ", length(vcf_donor), " variants from donor VCF\n")
     if (!any(isSNV_idx)) {
         write.csv(output_df, file = paste0(output_prefix, ".csv"),
@@ -151,11 +152,7 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
         message("No common variants overlapping in sample VCF and Donor VCF\n")
         return("Done.")
     }
-    assign <- cell_assign_EM(
-        A = snpmat_list$A, D = snpmat_list$D, C = snpmat_list$C,
-        Psi = rep(1 / ncol(snpmat_list$C), ncol(snpmat_list$C)),
-        model = "Binomial")
-    probs <- assign$prob
+    
     output_df <- data.frame(
         sample_id = colnames(snpmat_list$D),
         best_donor = NA,
@@ -166,6 +163,13 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
         n_total_reads = colSums(snpmat_list$D, na.rm = TRUE),
         n_alt_reads = colSums(snpmat_list$A, na.rm = TRUE),
         stringsAsFactors = FALSE)
+    rm(vcf_sample)
+    rm(vcf_donor)
+    assign <- cell_assign_EM(
+        A = snpmat_list$A, D = snpmat_list$D, C = snpmat_list$C,
+        Psi = rep(1 / ncol(snpmat_list$C), ncol(snpmat_list$C)),
+        model = "Binomial")
+    probs <- assign$prob
     donors <- colnames(probs)
     for (i in seq_len(nrow(probs))) {
         o <- order(probs[i,], decreasing = TRUE)
