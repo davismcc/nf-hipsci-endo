@@ -61,7 +61,7 @@ rule filter_cells_vcf:
     shell:
         """
         set +euo pipefail
-        bcftools filter -Oz -i'F_MISSING<0.03 && MAF>0.01 && QUAL>20' -o {output.vcf} {input.sc_vcf}
+        bcftools filter -Oz -i'F_MISSING<0.97 && MAF>0.01 && QUAL>20' -o {output.vcf} {input.sc_vcf}
         bcftools index {output.vcf}
         set -euo pipefail
         """
