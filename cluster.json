@@ -30,7 +30,7 @@
     },
     "identify_donor_multicell" :
     {
-        "memory" : "48000"
+        "memory" : "32000"
     },
     "identify_donor_collect" :
     {
