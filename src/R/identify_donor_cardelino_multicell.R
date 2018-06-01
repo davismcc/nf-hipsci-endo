@@ -90,6 +90,7 @@ get_snp_matrices <- function(vcf_sample, vcf_donor) {
                             function(x) x[[1]]), ncol = ncol(vcf_sample2))
         sm_sample_ALT <- matrix(sapply(geno(vcf_sample2, "AD"), 
                             function(x) x[[2]]), ncol = ncol(vcf_sample2))
+        sm_sample_ALT[is.na(sm_sample_ALT) & !is.na(sm_sample_REF)] <- 0
         sm_sample_DEP <- sm_sample_REF + sm_sample_ALT
         sm_sample_DEP[sm_sample_DEP == 0] <- NA
         sm_sample_REF[is.na(sm_sample_DEP)] <- NA
@@ -107,7 +108,8 @@ get_snp_matrices <- function(vcf_sample, vcf_donor) {
             sm_donor <- genotypeToSnpMatrix(
                 geno(vcf_donor, "GT"), ref = ref(vcf_donor),
                 alt = alt(vcf_donor))
-            donor_geno_mat <- matrix(as.numeric(as(sm_donor$genotypes, "numeric") > 0), nrow = nrow(sm_donor$genotypes))
+            donor_geno_mat <- matrix(as.numeric(as(sm_donor$genotypes, "numeric") > 0), 
+                nrow = nrow(sm_donor$genotypes))
             rownames(donor_geno_mat) <- rownames(sm_donor$genotypes)
             colnames(donor_geno_mat) <- colnames(sm_donor$genotypes)
             donor_geno_mat <- t(donor_geno_mat[order(rownames(donor_geno_mat)),])
@@ -121,7 +123,8 @@ get_snp_matrices <- function(vcf_sample, vcf_donor) {
 }
 
 
-main <- function(input_vcf, output_prefix, donor_vcf) {
+main <- function(input_vcf, output_prefix, donor_vcf, missing_thresh = 0.01,
+                    maf_thresh = 0.01) {
     ## Read in VCF from this sample
     vcf_sample <- read_sample_vcf(input_vcf)
     if (length(vcf_sample) < 1) {
@@ -131,6 +134,10 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
         return("Done.")
     }
     message("...read ", length(vcf_sample), " variants from sample VCF\n")
+    if (length(vcf_sample) > 10000) {
+        vcf_sample <- vcf_sample[sample.int(nrow(vcf_sample), 10000)]
+        message(".......using sample of 10,000 variants from sample VCF\n")
+    }
     ## Read in Donor VCF
     donor_data <- read_donor_vcf(donor_vcf)
     isSNV_idx <- donor_data$isSNV_idx
@@ -146,25 +153,32 @@ main <- function(input_vcf, output_prefix, donor_vcf) {
     vcf_donor <- vcf_donor[isSNV_idx]
     ## get snp matrices
     snpmat_list <- get_snp_matrices(vcf_sample, vcf_donor)
+    rm(vcf_sample)
+    rm(vcf_donor)
     if (snpmat_list$stop_program) {
         write.csv(output_df, file = paste0(output_prefix, ".csv"),
                   row.names = FALSE)
         message("No common variants overlapping in sample VCF and Donor VCF\n")
         return("Done.")
     }
-    
+    ## Add extra filtering step 
+    keep_snp <- (rowMeans(!is.na(snpmat_list$D)) > missing_thresh &
+        (rowSums(snpmat_list$A, na.rm = TRUE) / 
+            rowSums(snpmat_list$D, na.rm = TRUE) > maf_thresh))
+    snpmat_list$A <- snpmat_list$A[keep_snp,]
+    snpmat_list$D <- snpmat_list$D[keep_snp,]
+    snpmat_list$C <- snpmat_list$C[keep_snp,]
+    ## setup output df
     output_df <- data.frame(
         sample_id = colnames(snpmat_list$D),
-        best_donor = NA,
-        best_post_prob = NA,
+        donor = NA,
+        post_prob = NA,
         second_best_donor = NA,
         second_best_post_prob = NA,
         nvars_used = colSums(snpmat_list$D > 0.5, na.rm = TRUE),
         n_total_reads = colSums(snpmat_list$D, na.rm = TRUE),
         n_alt_reads = colSums(snpmat_list$A, na.rm = TRUE),
         stringsAsFactors = FALSE)
-    rm(vcf_sample)
-    rm(vcf_donor)
     assign <- cell_assign_EM(
         A = snpmat_list$A, D = snpmat_list$D, C = snpmat_list$C,
         Psi = rep(1 / ncol(snpmat_list$C), ncol(snpmat_list$C)),
@@ -196,10 +210,22 @@ message("donor vcf: ", opt$donor_vcf, "\n")
 ## Run main function
 main(opt$input_file, opt$output_prefix, opt$donor_vcf)
 
-## # params for testing
-## opt <-  list()
-## opt[["input_file"]] <- "data_raw/scrnaseq/run_24252/cells_merged_filt.vcf.gz"
-## opt[["output_prefix"]] <- "data_raw/scrnaseq/run_24252/tmp.donor_id_cardelino_all"
-## opt[["donor_vcf"]] <- "data_raw/scrnaseq/run_24252/filtered.hipsci.overlap.vcf.gz"
-## opt[["donor_lines"]] <- "aowh_2;keui_1;meue_4;naah_2;poih_4;vils_1;bokz_5;datg_2;guss_1;nudd_1;sehl_6"
+# # params for testing
+# opt <-  list()
+# opt[["input_file"]] <- "data_raw/scrnaseq/run_24252/cells_merged_filt.vcf.gz"
+# opt[["output_prefix"]] <- "data_raw/scrnaseq/run_24252/tmp.donor_id_cardelino_all"
+# opt[["donor_vcf"]] <- "data_raw/scrnaseq/run_24252/filtered.hipsci.overlap.vcf.gz"
+# opt[["donor_lines"]] <- "aowh_2;keui_1;meue_4;naah_2;poih_4;vils_1;bokz_5;datg_2;guss_1;nudd_1;sehl_6"
 
+# opt <-  list()
+# opt[["input_file"]] <- "data_raw/scrnaseq/run_25579/cells_merged_filt.vcf.gz"
+# opt[["output_prefix"]] <- "data_raw/scrnaseq/run_25579/tmp.donor_id_cardelino_all"
+# opt[["donor_vcf"]] <- "data_raw/scrnaseq/run_25579/filtered.hipsci.overlap.vcf.gz"
+# opt[["donor_lines"]] <- "qaqx;sojd;rayr;vass;yemz;tolg;ciwj;hajc;hecn;kuco;liqa;tert"
+
+
+# opt <-  list()
+# opt[["input_file"]] <- "data_raw/scrnaseq/run_25619/cells_merged_filt.vcf.gz"
+# opt[["output_prefix"]] <- "data_raw/scrnaseq/run_25619/tmp.donor_id_cardelino_all"
+# opt[["donor_vcf"]] <- "data_raw/scrnaseq/run_25619/filtered.hipsci.overlap.vcf.gz"
+# opt[["donor_lines"]] <- "ciwj;hajc;hecn;kuco;liqa;tert"
