@@ -187,8 +187,8 @@ main <- function(input_vcf, output_prefix, donor_vcf, missing_thresh = 0.01,
     donors <- colnames(probs)
     for (i in seq_len(nrow(probs))) {
         o <- order(probs[i,], decreasing = TRUE)
-        output_df[["best_donor"]][i] <- donors[o[1]]
-        output_df[["best_post_prob"]][i] <- probs[i, o[1]]
+        output_df[["donor"]][i] <- donors[o[1]]
+        output_df[["post_prob"]][i] <- probs[i, o[1]]
         output_df[["second_best_donor"]][i] <- donors[o[2]]
         output_df[["second_best_post_prob"]][i] <- probs[i, o[2]]
     }
