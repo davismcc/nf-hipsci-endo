@@ -140,7 +140,7 @@
     },
     "filter_cells_vcf" :
     {
-        "memory" : "2000"
+        "memory" : "200"
     },
     "filter_hipsci_overlap_variants" :
     {
